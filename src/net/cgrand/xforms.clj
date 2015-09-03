@@ -63,8 +63,11 @@
 (defn- noprf "The noop reducing function" ([acc] acc) ([acc _] acc))
 
 (defn by-key
-  "Returns a tranducer that applies the transducer xform independently for items partitioned by kfn.
-   (This docstring is a hard nut to crack.)"
+  "Returns a transducer which partitions items according to kfn.
+   It applies the transform specified by xform to each partition.
+   Partitions contain the \"value part\" (as returned by vfn) of each item.
+   The resulting transformed items are wrapped back into a \"pair\" using the pair function.
+   Default values for kfn, vfn and pair are first, second and vector."
   ([xform] (by-key key' val' vector xform))
   ([kfn xform] (by-key kfn identity vector xform))
   ([kfn vfn xform] (by-key kfn vfn vector xform))
