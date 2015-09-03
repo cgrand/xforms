@@ -44,7 +44,7 @@ Add this dependency to your project:
 `avg` is a reducing fn to compute the arithmetic mean. `juxt` is used to compute several reducing fns at once.
 ```clj
 => (into {} (x/by-key odd? (x/reduce (x/juxt + x/avg))) (range 256))
-{0 [16256 127], 1 [16384 128]}
+{false [16256 127], true [16384 128]}
 ```
 
 ## License

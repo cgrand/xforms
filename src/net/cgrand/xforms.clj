@@ -83,7 +83,7 @@
           ([acc] (clj/reduce (fn [acc krf] (krf acc)) acc (vals (persistent! @m))))
           ([acc x]
             (let [k (kfn x)
-                  krf (or (get @m k) (doto (xform (make-rf x)) (->> (vswap! m assoc! k))))
+                  krf (or (get @m k) (doto (xform (make-rf k)) (->> (vswap! m assoc! k))))
                   acc (krf acc (vfn x))]
               (when (reduced? acc)
                 (vswap! m assoc! k noprf))
