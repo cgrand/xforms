@@ -1,7 +1,7 @@
 (ns net.cgrand.xforms
   "Extra transducers for Clojure"
   {:author "Christophe Grand"}
-  (:refer-clojure :exclude [reduce for partition str])
+  (:refer-clojure :exclude [reduce for partition str juxt])
   (:require [clojure.core :as clj]))
 
 (defmacro for
@@ -27,7 +27,8 @@
          ([~acc ~binding] ~body)))))
 
 (defn reduce
-  "A transducer that reduces a collection to a 1-item collection consisting of only the reduced result."
+  "A transducer that reduces a collection to a 1-item collection consisting of only the reduced result.
+   Unlike reduce but like transduce it does call the completing arity (1) of the reducing fn."
   ([f]
     (fn [rf]
      (let [vacc (volatile! (f))]
@@ -88,5 +89,31 @@
                 (vswap! m assoc! k noprf))
               (unreduced acc))))))))
 
+(defn avg
+  "Reducing fn to compute the arithmetic mean."
+  ([]
+    (let [count (volatile! 0)
+          sum (volatile! 0)] 
+      (fn secret-container
+        ([] (when (pos? @count) (/ @sum @count)))
+        ([n]
+          (vswap! count inc)
+          (vswap! sum + n)
+          secret-container))))
+  ([acc] (acc))
+  ([acc x] (acc x)))
 
+(defn juxt
+  "Returns a reducing fn which compute all rfns at once and whose final return
+   value is a vector of the final return values of each rfns."
+  [& rfns]
+  (let [rfns (vec rfns)]
+    (fn
+      ([] (mapv #(vector % (volatile! (%))) rfns))
+      ([acc] (mapv (fn [[rf vacc]] (rf (unreduced @vacc))) acc))
+      ([acc x]
+        (let [some-unreduced (reduce (fn [some-unreduced [rf vacc]] 
+                                       (when-not (reduced? @vacc) (vswap! vacc rf x) true))
+                               false acc)]
+          (if some-unreduced acc (reduced acc)))))))
 
