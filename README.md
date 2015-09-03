@@ -22,11 +22,11 @@ More transducers and reduciing functions for Clojure!
 ```clj
 ;; reimplementing group-by
 (defn my-group-by [kfn coll]
-  (into {} (by-key kfn (reduce conj)) coll))
+  (into {} (x/by-key kfn (x/reduce conj)) coll))
 
 ;; let's go transient!
 (defn my-group-by [kfn coll]
-  (into {} (by-key kfn (reduce (completing conj! persistent!))) coll))
+  (into {} (x/by-key kfn (x/reduce (completing conj! persistent!))) coll))
 
 => (quick-bench (group-by odd? (range 256)))
              Execution time mean : 29,356531 µs
