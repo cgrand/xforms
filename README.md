@@ -4,6 +4,13 @@ More transducers and reduciing functions for Clojure!
 
 ## Usage
 
+Add this dependency to your project:
+
+```clj
+[net.cgrand/xforms "0.1.0-SNAPSHOT"]
+```
+
+
 ```clj
 => (require '[net.cgrand.xforms :as x])
 ```
