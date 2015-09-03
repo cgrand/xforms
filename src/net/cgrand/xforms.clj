@@ -67,7 +67,7 @@
    It applies the transform specified by xform to each partition.
    Partitions contain the \"value part\" (as returned by vfn) of each item.
    The resulting transformed items are wrapped back into a \"pair\" using the pair function.
-   Default values for kfn, vfn and pair are first, second and vector."
+   Default values for kfn, vfn and pair are first, second (or identity if kfn is specified) and vector."
   ([xform] (by-key key' val' vector xform))
   ([kfn xform] (by-key kfn identity vector xform))
   ([kfn vfn xform] (by-key kfn vfn vector xform))
