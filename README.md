@@ -1,6 +1,6 @@
 # xforms
 
-More transducers and reduciing functions for Clojure!
+More transducers and reducing functions for Clojure!
 
 ## Usage
 
