@@ -14,7 +14,6 @@ Add this dependency to your project:
 [net.cgrand/xforms "0.1.0-SNAPSHOT"]
 ```
 
-
 ```clj
 => (require '[net.cgrand.xforms :as x])
 ```
@@ -26,6 +25,15 @@ Add this dependency to your project:
              Execution time mean : 58,714946 µs
 => (quick-bench (reduce x/str (range 256)))
              Execution time mean : 11,609631 µs
+```
+
+`for` is the transducing cousin of `clojure.core/for`:
+
+```clj
+=> (quick-bench (reduce + (for [i (range 128) j (range i)] (* i j))))
+             Execution time mean : 514,932029 µs
+=> (quick-bench (transduce (x/for [i % j (range i)] (* i j)) + 0 (range 128)))
+             Execution time mean : 373,814060 µs
 ```
 
 `by-key` and `reduce` are two new transducers. Here is an example usage:

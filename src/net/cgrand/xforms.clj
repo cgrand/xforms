@@ -17,7 +17,7 @@
                         :let `(let ~expr ~body)
                         :when `(if ~expr ~body ~acc)
                         :while `(if ~expr ~body (reduced ~acc))
-                        `(reduce (fn [~acc ~binding] ~body) ~acc ~expr))) 
+                        `(clj/reduce (fn [~acc ~binding] ~body) ~acc ~expr)))
           `(~rf ~acc ~body)
           (clj/partition 2 (rseq (vec seq-exprs))))]
     `(fn [~rf]
