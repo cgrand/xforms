@@ -2,6 +2,10 @@
 
 More transducers and reducing functions for Clojure!
 
+Transducers: `reduce`, `into`, `by-key`, `partition`, `pad` and `for`.
+
+Reducing functions: `str`, `str!`, `avg`, `count`, `juxt`, `juxt-map`.
+
 ## Usage
 
 Add this dependency to your project:
@@ -33,7 +37,7 @@ Add this dependency to your project:
 
 ;; let's go transient!
 (defn my-group-by [kfn coll]
-  (into {} (x/by-key kfn (x/reduce (completing conj! persistent!))) coll))
+  (into {} (x/by-key kfn (x/into [])) coll))
 
 => (quick-bench (group-by odd? (range 256)))
              Execution time mean : 29,356531 µs
@@ -41,10 +45,28 @@ Add this dependency to your project:
              Execution time mean : 20,604297 µs
 ```
 
-`avg` is a reducing fn to compute the arithmetic mean. `juxt` is used to compute several reducing fns at once.
+Like `by-key`, `partition` also takes a transducer as an argument to allow further computation on the partition without buffering.
+
+```clj
+=> (sequence (x/partition 4 (x/reduce +)) (range 16))
+(6 22 38 54)
+```
+
+Padding can be achieved using the `pad` function:
+
+```clj
+=> (sequence (x/partition 4 (comp (x/pad 4 (repeat :pad)) (x/into []))) (range 9))
+([0 1 2 3] [4 5 6 7] [8 :pad :pad :pad])
+```
+
+
+`avg` is a reducing fn to compute the arithmetic mean. `juxt` and `juxt-map` are used to compute several reducing fns at once.
+
 ```clj
 => (into {} (x/by-key odd? (x/reduce (x/juxt + x/avg))) (range 256))
 {false [16256 127], true [16384 128]}
+=> (into {} (x/by-key odd? (x/reduce (x/juxt-map :sum + :mean x/avg :count x/count))) (range 256))
+{false {:sum 16256, :mean 127, :count 128}, true {:sum 16384, :mean 128, :count 128}}
 ```
 
 ## License
