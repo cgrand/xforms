@@ -4,7 +4,7 @@ More transducers and reducing functions for Clojure!
 
 [![Build Status](https://travis-ci.org/cgrand/xforms.png?branch=master)](https://travis-ci.org/cgrand/xforms)
 
-Transducers: `reduce`, `into`, `by-key`, `partition`, `pad` and `for`.
+Transducers: `reduce`, `into`, `by-key`, `partition`, `pad`, `for` and `window`.
 
 Reducing functions: `str`, `str!`, `avg`, `count`, `juxt`, `juxt-map`.
 
@@ -77,6 +77,36 @@ Padding can be achieved using the `pad` function:
 {false [16256 127], true [16384 128]}
 => (into {} (x/by-key odd? (x/reduce (x/juxt-map :sum + :mean x/avg :count x/count))) (range 256))
 {false {:sum 16256, :mean 127, :count 128}, true {:sum 16384, :mean 128, :count 128}}
+```
+
+`window` is a new transducer to efficiently compute a windowed accumulator:
+
+```clj
+;; sum of last 3 items
+=> (sequence (x/window 3 + -) (range 16))
+(0 1 3 6 9 12 15 18 21 24 27 30 33 36 39 42)
+
+=> (def nums (repeatedly 8 #(rand-int 42)))
+#'user/nums
+=> nums
+(11 8 32 26 6 10 37 24)
+
+;; avg of last 4 items
+=> (sequence
+     (x/window 4 x/avg #(x/avg % (- %2)))
+     nums)
+(11 19/2 17 77/4 12 37/4 79/10 77/12)
+
+;; min of last 3 items
+=> (sequence
+     (x/window 3
+       (fn
+         ([] (sorted-set))
+         ([s] (first s))
+         ([s x] (conj s x)))
+       disj)
+     nums)
+(11 8 8 8 6 6 6 10)
 ```
 
 ## On Partitioning

@@ -173,6 +173,39 @@
   ([acc] (acc))
   ([acc x] (acc x)))
 
+(defn window
+  "Returns a transducer which computes an accumulator over the last n items
+   using two functions: f and its inverse invf.
+
+   The accumulator is initialized with (f).
+   It is updated to (f (invf acc out) in) where \"acc\" is the current value,
+   \"in\" the new item entering the window, \"out\" the item exiting the window.
+   The value passed to the dowstream reducing function is (f acc) enabling acc to be
+   mutable and 1-arity f to project its state to a value.
+
+   If you don't want to see the accumulator until the window is full then you need to
+   use (drop (dec n)) to remove them."
+  [n f invf]
+  (fn [rf]
+    (let [ring (object-array n)
+          vi (volatile! (- n))
+          vwacc (volatile! (f))]
+      (fn
+        ([] (rf))
+        ([acc] (rf acc))
+        ([acc x]
+          (let [i @vi
+                wacc @vwacc] ; window accumulator
+            (if (neg? i) ; not full yet
+              (do
+                (aset ring (+ n i) x)
+                (vreset! vi (inc i))
+                (rf acc (f (vreset! vwacc (f wacc x)))))
+              (let [x' (aget ring i)]
+                (aset ring i x)
+                (vreset! vi (let [i (inc i)] (if (= n i) 0 i)))
+                (rf acc (f (vreset! vwacc (f (invf wacc x') x))))))))))))
+
 (defn count ([] 0) ([n] n) ([n _] (inc n)))
 
 (defn juxt
