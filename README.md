@@ -101,6 +101,16 @@ That's why most of the time the last stage of the sub-transducer will be a `x/re
 ([false [0 2 4 6]] [true [1 3 5 7]])
 ```
 
+## Simple examples
+
+`(group-by kf coll)` is `(into {} (x/by-key kf (x/into []) coll))`.
+
+`(plumbing/map-vals f m)` is `(into {} (x/by-key (map f)) m)`.
+
+My faithful `(reduce-by kf f init coll)` is now `(into {} (x/by-key kf (x/reduce f init)))`.
+
+`(frequencies coll)` is `(into {} (x/by-key identity (x/reduce x/count)) coll)`.
+
 ## License
 
 Copyright © 2015 Christophe Grand
