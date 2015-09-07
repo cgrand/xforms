@@ -2,6 +2,8 @@
 
 More transducers and reducing functions for Clojure!
 
+[![Build Status](https://travis-ci.org/cgrand/xforms.png?branch=master)](https://travis-ci.org/cgrand/xforms)
+
 Transducers: `reduce`, `into`, `by-key`, `partition`, `pad` and `for`.
 
 Reducing functions: `str`, `str!`, `avg`, `count`, `juxt`, `juxt-map`.
