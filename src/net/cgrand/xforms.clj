@@ -76,6 +76,11 @@
 
 (defn- noprf "The noop reducing function" ([acc] acc) ([acc _] acc))
 
+(defn- multiplexable
+  "Creates a multiplexable reducing function (doesn't init or complete the uderlying rf)."
+  [rf]
+  (fn ([]) ([acc] acc) ([acc x] (rf acc x)))) ; no init no complete rf
+
 (defn by-key
   "Returns a transducer which partitions items according to kfn.
    It applies the transform specified by xform to each partition.
@@ -88,17 +93,17 @@
   ([kfn vfn pair xform]
     (fn [rf]
       (let [make-rf (if pair
-                      (fn [k] (fn ([acc] (rf acc)) ([acc v] (rf acc (pair k v)))))
-                      (constantly rf))
+                      (fn [k] (fn ([acc] acc) ([acc v] (rf acc (pair k v)))))
+                      (constantly (multiplexable rf)))
             m (volatile! (transient {}))]
         (fn self
           ([] (rf))
-          ([acc] (clj/reduce (fn [acc krf] (krf acc)) acc (vals (persistent! @m))))
+          ([acc] (rf (clj/reduce (fn [acc krf] (krf acc)) acc (vals (persistent! @m)))))
           ([acc x]
             (let [k (kfn x)
                   krf (or (get @m k) (doto (xform (make-rf k)) (->> (vswap! m assoc! k))))
                   acc (krf acc (vfn x))]
-              (when (reduced? acc)
+              (when (reduced? acc) ; complete?
                 (vswap! m assoc! k noprf))
               (unreduced acc))))))))
 
@@ -106,7 +111,7 @@
   "Every n items, spawns a new pipeline."
   [n xform]
   (fn [rf]
-    (let [ncrf (fn ([]) ([acc] acc) ([acc x] (rf acc x))) ; no init no complete rf
+    (let [mxrf (multiplexable rf)
           vrfs (volatile! [])
           m (volatile! 0)]
       (fn
@@ -126,8 +131,8 @@
             (let [acc (clj/reduce step! acc rfs)
                   acc (if (neg? (vswap! m dec))
                         (do
-                          (step! acc (xform ncrf))
-                          (vswap! m + n))
+                          (vswap! m + n)
+                          (step! acc (xform mxrf)))
                         acc)]
               (vswap! vrfs persistent!)
               acc)))))))
