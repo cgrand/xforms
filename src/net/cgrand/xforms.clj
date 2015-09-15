@@ -301,10 +301,11 @@
    Returns a map with the same keyset as xforms-map (or a vector of same size as xforms-map).
    Returns a transducer when coll is omitted."
   ([xforms-map]
-    (let [rf (if (vector? xforms-map)
-               (apply juxt (map #(% just) xforms-map))
-               (apply juxt-map (sequence (comp (by-key (map #(% just))) cat) xforms-map)))]
-      (reduce rf)))
+    (let [[f args] (if (vector? xforms-map)
+                     [juxt (map #(% just))]
+                     [juxt-map (comp (by-key (map #(% just))) cat)])]
+      (fn [rf]
+        ((reduce (apply f (sequence args xforms-map))) rf))))
   ([xforms-map coll]
     (transduce (transjuxt xforms-map) just coll)))
 
