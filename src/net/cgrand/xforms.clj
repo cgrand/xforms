@@ -290,3 +290,18 @@
       ([acc] (zipmap keys (f acc)))
       ([acc x] (f acc x)))))
 
+(defn just
+  "Reducing function that returns the first value or nil if none."
+  ([] nil)
+  ([x] x)
+  ([_ x] (reduced x)))
+
+(defn transjuxt
+  "Performs several transductions over coll at once. xforms-map can be a map or vector.
+   Returns a map with the same keyset as xforms-map (or a vector of same size as xforms-map)."
+  [xforms-map coll]
+  (let [rf (if (vector? xforms-map)
+             (apply juxt (map #(% just) xforms-map))
+             (apply juxt-map (sequence (comp (by-key (map #(% just))) cat) xforms-map)))]
+    (rf (clj/reduce rf (rf) coll))))
+
