@@ -298,10 +298,13 @@
 
 (defn transjuxt
   "Performs several transductions over coll at once. xforms-map can be a map or vector.
-   Returns a map with the same keyset as xforms-map (or a vector of same size as xforms-map)."
-  [xforms-map coll]
-  (let [rf (if (vector? xforms-map)
-             (apply juxt (map #(% just) xforms-map))
-             (apply juxt-map (sequence (comp (by-key (map #(% just))) cat) xforms-map)))]
-    (rf (clj/reduce rf (rf) coll))))
+   Returns a map with the same keyset as xforms-map (or a vector of same size as xforms-map).
+   Returns a transducer when coll is omitted."
+  ([xforms-map]
+    (let [rf (if (vector? xforms-map)
+               (apply juxt (map #(% just) xforms-map))
+               (apply juxt-map (sequence (comp (by-key (map #(% just))) cat) xforms-map)))]
+      (reduce rf)))
+  ([xforms-map coll]
+    (transduce (transjuxt xforms-map) just coll)))
 
