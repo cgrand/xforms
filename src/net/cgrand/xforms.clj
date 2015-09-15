@@ -54,7 +54,7 @@
         (if-some [f (some-kvrf f)]
           (kvrf
             ([] (rf))
-            ([acc] (rf (rf acc (f (unreduced @vacc)))))
+            ([acc] (rf (unreduced (rf acc (f (unreduced @vacc))))))
             ([acc x]
               (if (reduced? (vswap! vacc f x))
                 (reduced acc)
@@ -65,7 +65,7 @@
                 acc)))
           (fn
             ([] (rf))
-            ([acc] (rf (rf acc (f (unreduced @vacc)))))
+            ([acc] (rf (unreduced (rf acc (f (unreduced @vacc))))))
             ([acc x]
               (if (reduced? (vswap! vacc f x))
                 (reduced acc)
