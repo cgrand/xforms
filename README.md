@@ -6,14 +6,16 @@ More transducers and reducing functions for Clojure!
 
 Transducers: `reduce`, `into`, `by-key`, `partition`, `pad`, `for` and `window`.
 
-Reducing functions: `str`, `str!`, `avg`, `count`, `juxt`, `juxt-map`.
+Reducing functions: `str`, `str!`, `avg`, `count`, `juxt`, `juxt-map` and `first`.
+
+Transducing context: `transjuxt` (for performing several transductions in a single pass).
 
 ## Usage
 
 Add this dependency to your project:
 
 ```clj
-[net.cgrand/xforms "0.1.0-SNAPSHOT"]
+[net.cgrand/xforms "0.1.0"]
 ```
 
 ```clj
