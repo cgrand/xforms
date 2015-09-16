@@ -1,7 +1,7 @@
 (ns net.cgrand.xforms
   "Extra transducers for Clojure"
   {:author "Christophe Grand"}
-  (:refer-clojure :exclude [reduce into count for partition str juxt])
+  (:refer-clojure :exclude [reduce into count for partition str juxt first])
   (:require [clojure.core :as clj]))
 
 (defmacro for
@@ -36,7 +36,7 @@
 (defmacro kvrf [name? & fn-bodies]
   (let [name (if (symbol? name?) name? (gensym '_))
         fn-bodies (if (symbol? name?) fn-bodies (cons name? fn-bodies))
-        fn-bodies (if (vector? (first fn-bodies)) (list fn-bodies) fn-bodies)]
+        fn-bodies (if (vector? (clj/first fn-bodies)) (list fn-bodies) fn-bodies)]
     `(reify
        clojure.lang.Fn
        KvRfable
@@ -290,7 +290,7 @@
       ([acc] (zipmap keys (f acc)))
       ([acc x] (f acc x)))))
 
-(defn just
+(defn first
   "Reducing function that returns the first value or nil if none."
   ([] nil)
   ([x] x)
@@ -302,10 +302,10 @@
    Returns a transducer when coll is omitted."
   ([xforms-map]
     (let [[f args] (if (vector? xforms-map)
-                     [juxt (map #(% just))]
-                     [juxt-map (comp (by-key (map #(% just))) cat)])]
+                     [juxt (map #(% first))]
+                     [juxt-map (comp (by-key (map #(% first))) cat)])]
       (fn [rf]
         ((reduce (apply f (sequence args xforms-map))) rf))))
   ([xforms-map coll]
-    (transduce (transjuxt xforms-map) just coll)))
+    (transduce (transjuxt xforms-map) first coll)))
 
