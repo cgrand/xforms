@@ -73,32 +73,42 @@
   ([f init]
     (reduce (fn ([] init) ([acc] (f acc)) ([acc x] (f acc x))))))
 
+(defn- into-rf [to]
+  (cond
+    (instance? clojure.lang.IEditableCollection to)
+    (if (map? to)
+      (kvrf
+        ([] (transient to))
+        ([acc] (persistent! acc))
+        ([acc x] (conj! acc x))
+        ([acc k v] (assoc! acc k v)))
+      (fn
+        ([] (transient to))
+        ([acc] (persistent! acc))
+        ([acc x] (conj! acc x))))
+    (map? to)
+    (kvrf
+      ([] to)
+      ([acc] acc)
+      ([acc x] (conj acc x))
+      ([acc k v] (assoc acc k v)))
+    :else
+    (fn
+      ([] to)
+      ([acc] acc)
+      ([acc x] (conj acc x)))))
+
 (defn into
-  "Returns a transducer which accumulate every input in a collection and outputs only the accumulated collection."
-  [coll]
-  (reduce (cond
-            (instance? clojure.lang.IEditableCollection coll)
-            (if (map? coll)
-              (kvrf
-                ([] (transient coll))
-                ([acc] (persistent! acc))
-                ([acc x] (conj! acc x))
-                ([acc k v] (assoc! acc k v)))
-              (fn
-               ([] (transient coll))
-               ([acc] (persistent! acc))
-               ([acc x] (conj! acc x))))
-            (map? coll)
-            (kvrf
-              ([] coll)
-              ([acc] acc)
-              ([acc x] (conj acc x))
-              ([acc k v] (assoc acc k v)))
-            :else
-            (fn
-              ([] coll)
-              ([acc] acc)
-              ([acc x] (conj acc x))))))
+  "Like clojure.core/into but with a 1-arg arity returning a transducer which accumulate every input in a collection and outputs only the accumulated collection."
+  ([to]
+    (reduce (into-rf to)))
+  ([to from]
+    (into to identity from))
+  ([to xform from]
+    (let [rf (xform (into-rf to))]
+      (if-let [rf (and (map? from) (satisfies? clojure.core.protocols/IKVReduce from) (some-kvrf rf))]
+        (rf (clj/reduce-kv rf (rf) from))
+        (rf (clj/reduce rf (rf) from))))))
 
 (defmacro ^:private or-instance? [class x y]
   (let [xsym (gensym 'x_)]
