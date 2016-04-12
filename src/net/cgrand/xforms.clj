@@ -307,15 +307,54 @@
   ([_ x] (reduced x)))
 
 (defn transjuxt
-  "Performs several transductions over coll at once. xforms-map can be a map or vector.
-   Returns a map with the same keyset as xforms-map (or a vector of same size as xforms-map).
+  "Performs several transductions over coll at once. xforms-map can be a map or a sequential collection.
+   When xforms-map is a map, returns a map with the same keyset as xforms-map.
+   When xforms-map is a sequential collection returns a vector of same length as xforms-map.
    Returns a transducer when coll is omitted."
   ([xforms-map]
-    (let [[f args] (if (vector? xforms-map)
-                     [juxt (map #(% first))]
-                     [juxt-map (comp (by-key (map #(% first))) cat)])]
+    (let [[f args] (if (map? xforms-map)
+                     [juxt-map (comp (by-key (map #(% first))) cat)]
+                     [juxt (map #(% first))])]
       (fn [rf]
         ((reduce (apply f (sequence args xforms-map))) rf))))
   ([xforms-map coll]
     (transduce (transjuxt xforms-map) first coll)))
 
+#_(defn intermix
+   [xforms]
+   (fn [rf]
+     (let [mxrf (multiplexable rf)
+           rfs (volatile! (into #{} (map #(%2 mxrf)) xforms))]
+       (fn
+         )))
+   )
+
+(defn tag 
+  "Like (map #(vector tag %)) but potentially more efficient."
+  [tag]
+  (fn [rf]
+    (if-some [rf (some-kvrf rf)]
+      (fn
+        ([] (rf))
+        ([acc] (rf acc))
+        ([acc v] (rf acc tag v)))
+      (fn
+        ([] (rf))
+        ([acc] (rf acc))
+        ([acc v] (rf acc [tag v]))))))
+
+(defn map-kv
+  "Like (map (fn [[k v]] [(kf k v) (vf k v)])) but potentially more efficient."
+  [kf vf]
+  (fn [rf]
+    (if-some [rf (some-kvrf rf)]
+      (kvrf
+        ([] (rf))
+        ([acc] (rf acc))
+        ([acc [k v]] (rf acc (kf k v) (vf k v)))
+        ([acc k v] (rf acc (kf k v) (vf k v))))
+      (kvrf
+        ([] (rf))
+        ([acc] (rf acc))
+        ([acc [k v]] (rf acc [(kf k v) (vf k v)]))
+        ([acc k v] (rf acc [(kf k v) (vf k v)]))))))

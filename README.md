@@ -15,7 +15,7 @@ Transducing context: `transjuxt` (for performing several transductions in a sing
 Add this dependency to your project:
 
 ```clj
-[net.cgrand/xforms "0.1.0"]
+[net.cgrand/xforms "0.1.1-SNAPSHOT"]
 ```
 
 ```clj
@@ -145,7 +145,7 @@ My faithful `(reduce-by kf f init coll)` is now `(into {} (x/by-key kf (x/reduce
 
 ## License
 
-Copyright © 2015 Christophe Grand
+Copyright © 2015-2016 Christophe Grand
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.
