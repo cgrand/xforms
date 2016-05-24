@@ -71,3 +71,19 @@
           4 (range 16)))
     (is (trial (x/pad 8 (repeat :pad))
           4 (range 16)))))
+
+(deftest window-by-time
+  (is (= (into 
+           []
+           (x/window-by-time :ts 4
+             (fn 
+               ([] clojure.lang.PersistentQueue/EMPTY)
+               ([q] (vec q))
+               ([q x] (conj q x)))
+             (fn [q _] (pop q)))
+           (map (fn [x] {:ts x}) (concat (range 0 2 0.5) (range 3 5 0.25))))
+        [[{:ts 0}] [{:ts 0}] [{:ts 0} {:ts 0.5}] [{:ts 0} {:ts 0.5}] [{:ts 0.5} {:ts 1.0}] [{:ts 0.5} {:ts 1.0}]
+         [{:ts 1.0} {:ts 1.5}] [{:ts 1.0} {:ts 1.5}] [{:ts 1.5}] [{:ts 1.5}] [] [] [{:ts 3}] [{:ts 3} {:ts 3.25}]
+         [{:ts 3} {:ts 3.25} {:ts 3.5}] [{:ts 3} {:ts 3.25} {:ts 3.5} {:ts 3.75}] [{:ts 3.25} {:ts 3.5} {:ts 3.75} {:ts 4.0}]
+         [{:ts 3.5} {:ts 3.75} {:ts 4.0} {:ts 4.25}] [{:ts 3.75} {:ts 4.0} {:ts 4.25} {:ts 4.5}]
+         [{:ts 4.0} {:ts 4.25} {:ts 4.5} {:ts 4.75}]])))

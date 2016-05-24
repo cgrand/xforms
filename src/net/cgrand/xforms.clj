@@ -280,6 +280,59 @@
                 (vreset! vi (let [i (inc i)] (if (= n i) 0 i)))
                 (rf acc (f (vreset! vwacc (f (invf wacc x') x))))))))))))
 
+(defn window-by-time
+  "Returns a transducer which computes a windowed accumulator over chronologically sorted items.
+   
+   timef is a function from one item to its scaled timestamp (as a double). The window length is always 1.0
+   so timef must normalize timestamps. For example if timestamps are in seconds (and under the :ts key),
+   to get a 1-hour window you have to use (fn [x] (/ (:ts x) 3600.0)) as timef.
+
+   n is the integral number of steps by which the window slides. With a 1-hour window, 4 means that the window slides every 15 minutes.
+
+   f and invf work like in #'window."
+  [timef n f invf]
+  (let [timef (fn [x] (long (Math/floor (* n (timef x)))))]
+    (fn [rf]
+     (let [dq (java.util.ArrayDeque.)
+           vwacc (volatile! (f))
+           flush!
+           (fn [acc ^long from-ts ^long to-ts]
+             (loop [ts from-ts acc acc wacc @vwacc]
+               (let [x (.peekFirst dq)]
+                 (cond
+                   (= ts (timef x))
+                   (do
+                     (.pollFirst dq)
+                     (recur ts acc (invf wacc x)))
+                   (= ts to-ts)
+                   (do
+                     (vreset! vwacc wacc)
+                     acc)
+                   :else
+                   (let [acc (rf acc (f wacc))]
+                     (if (reduced? acc)
+                       (do
+                         (vreset! vwacc wacc)
+                         acc)
+                       (recur (inc ts) acc wacc)))))))]
+       (fn
+         ([] (rf))
+         ([acc]
+           (let [acc (if-not (.isEmpty dq)
+                       (unreduced (rf acc (f @vwacc)))
+                       acc)]
+             (rf acc)))
+         ([acc x]
+           (let [limit (- (timef x) n)
+                 prev-limit (if-some [prev-x (.peekLast dq)]
+                              (- (timef prev-x) n)
+                              limit)
+                 _ (.addLast dq x) ; so dq is never empty for flush!
+                 acc (flush! acc prev-limit limit)]
+             (when-not (reduced? acc)
+               (vswap! vwacc f x))
+             acc)))))))
+
 (defn count ([] 0) ([n] n) ([n _] (inc n)))
 
 (defn juxt

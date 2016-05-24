@@ -4,7 +4,7 @@ More transducers and reducing functions for Clojure!
 
 [![Build Status](https://travis-ci.org/cgrand/xforms.png?branch=master)](https://travis-ci.org/cgrand/xforms)
 
-Transducers: `reduce`, `into`, `by-key`, `partition`, `pad`, `for` and `window`.
+Transducers: `reduce`, `into`, `by-key`, `partition`, `pad`, `for`, `window` and `window-by-time`.
 
 Reducing functions: `str`, `str!`, `avg`, `count`, `juxt`, `juxt-map` and `first`.
 
@@ -15,7 +15,7 @@ Transducing context: `transjuxt` (for performing several transductions in a sing
 Add this dependency to your project:
 
 ```clj
-[net.cgrand/xforms "0.1.1-SNAPSHOT"]
+[net.cgrand/xforms "0.2.0"]
 ```
 
 ```clj
