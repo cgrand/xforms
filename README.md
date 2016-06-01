@@ -143,6 +143,63 @@ My faithful `(reduce-by kf f init coll)` is now `(into {} (x/by-key kf (x/reduce
 
 `(frequencies coll)` is `(into {} (x/by-key identity (x/reduce x/count)) coll)`.
 
+## On key-value pairs
+
+Clojure `reduce-kv` is able to reduce key value pairs without allocating vectors or map entries: the key and value
+are passed as second and third arguments of the reducing function.
+
+Xforms allows a reducing function to advertise its support for key value pairs (3-arg arity) by implementing the `KvRfable` protocol (in practice using the `kvrf` macro).
+
+Several xforms transducers and transducing contexts leverage `reduce-kv` and `kvrf`. When used together pairs can be transformed without allocating them.
+
+<table>
+  <thead>
+    <tr><th>fn<th>kvs in?<th>kvs out?
+  </thead>
+  <tbody>
+    <tr><td>`for`<td>when first binding is a pair<td>when `body-expr` is a pair
+    <tr><td>`reduce`<td>when is `f` is a kvrf<td>no
+    <tr><td>1-arg `into`<br>(transducer)<td>when `to` is a map<td>no
+    <tr><td>3-arg `into`<br>(transducing context)<td>when `from` is a map<td>when `to` is a map
+    <tr><td>`by-key`<br>(as a transducer)<td>when is `kfn` and `vfn` are unspecified or `nil`<td>when `pair` is `vector` or unspecified
+    <tr><td>`by-key`<br>(as a transducing context on values)<td>no<td>no
+  </tbody>
+<table>
+
+```clj
+;; plain old sequences
+=> (let [m (zipmap (range 1e5) (range 1e5))]
+     (crit/quick-bench
+       (into {}
+         (for [[k v] m]
+           [k (inc v)]))))
+Evaluation count : 12 in 6 samples of 2 calls.
+             Execution time mean : 55,150081 ms
+    Execution time std-deviation : 1,397185 ms
+
+;; x/for but pairs are allocated (because of into) 
+=> (let [m (zipmap (range 1e5) (range 1e5))]
+     (crit/quick-bench
+       (into {}
+         (x/for [[k v] _]
+           [k (inc v)])
+         m)))
+Evaluation count : 18 in 6 samples of 3 calls.
+             Execution time mean : 39,119387 ms
+    Execution time std-deviation : 1,456902 ms
+    
+;; x/for but no pairs are allocated (thanks to x/into) 
+=> (let [m (zipmap (range 1e5) (range 1e5))]
+     (crit/quick-bench (x/into {}
+               (x/for [[k v] %]
+                 [k (inc v)])
+               m)))
+Evaluation count : 24 in 6 samples of 4 calls.
+             Execution time mean : 24,276790 ms
+    Execution time std-deviation : 364,932996 µs
+```
+
+
 ## License
 
 Copyright © 2015-2016 Christophe Grand
