@@ -150,7 +150,7 @@ are passed as second and third arguments of the reducing function.
 
 Xforms allows a reducing function to advertise its support for key value pairs (3-arg arity) by implementing the `KvRfable` protocol (in practice using the `kvrf` macro).
 
-Several xforms transducers and transducing contexts leverage `reduce-kv` and `kvrf`. When used together pairs can be transformed without allocating them.
+Several xforms transducers and transducing contexts leverage `reduce-kv` and `kvrf`. When these functions are used together, pairs can be transformed without being allocated.
 
 <table>
   <thead>
