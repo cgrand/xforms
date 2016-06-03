@@ -95,9 +95,9 @@ Padding can be achieved using the `pad` function:
 
 ;; avg of last 4 items
 => (sequence
-     (x/window 4 x/avg #(x/avg % (- %2)))
+     (x/window 4 x/avg #(x/avg %1 %2 -1))
      nums)
-(11 19/2 17 77/4 12 37/4 79/10 77/12)
+(11 19/2 17 77/4 18 37/2 79/4 77/4)
 
 ;; min of last 3 items
 => (sequence
@@ -163,6 +163,8 @@ Several xforms transducers and transducing contexts leverage `reduce-kv` and `kv
     <tr><td>3-arg `into`<br>(transducing context)<td>when `from` is a map<td>when `to` is a map
     <tr><td>`by-key`<br>(as a transducer)<td>when is `kfn` and `vfn` are unspecified or `nil`<td>when `pair` is `vector` or unspecified
     <tr><td>`by-key`<br>(as a transducing context on values)<td>no<td>no
+    <tr><td>`juxt`<td>when at least one of the children `rfns` is a kvrf<td>no
+    <tr><td>`juxt-map`<td>when at least one of the children `rfns` is a kvrf<td>no
   </tbody>
 <table>
 
