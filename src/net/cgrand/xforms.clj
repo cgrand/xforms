@@ -22,7 +22,7 @@
                   init (clj/partition 2 (rseq (vec seq-exprs)))))
         body (build `(~rf ~acc ~body-expr))
         kvbody (when (pair? body-expr) (build `(~rf ~acc ~@body-expr)))
-        fnsym (if (and (pair? binding) (not (some keyword? binding)) (not (some #{"&"} (filter symbol? binding)))) `kvrf `fn)]
+        fnsym (if (and (pair? binding) (not (some keyword? binding)) (not (some #{'&} (filter symbol? binding)))) `kvrf `fn)]
     (if kvbody
       `(fn [~rf]
          (if-some [~rf (some-kvrf ~rf)]
