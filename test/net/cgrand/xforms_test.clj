@@ -102,3 +102,7 @@
   [{:ts 3.5} {:ts 3.75} {:ts 4.0} {:ts 4.25}] ; t =  4.25
   [{:ts 3.75} {:ts 4.0} {:ts 4.25} {:ts 4.5}] ; t =  4.5
   [{:ts 4.0} {:ts 4.25} {:ts 4.5} {:ts 4.75}]]))) ; t =  4.75
+
+(deftest do-not-kvreduce-vectors
+  (is (= {0 nil 1 nil} (x/into {} (x/for [[k v] %] [k v]) [[0] [1]])))
+  (is (= {0 nil 1 nil} (x/into {} (x/for [_ % [k v] [[0] [1]]] [k v]) ["a"]))))
