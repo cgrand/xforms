@@ -365,7 +365,12 @@
                  (vswap! vwacc f x))
                acc))))))))
 
-(defn count ([] 0) ([n] n) ([n _] (inc n)))
+(defn count [rf]
+  (let [n (java.util.concurrent.atomic.AtomicLong.)] 
+    (fn
+      ([] (rf))
+      ([acc] (rf (unreduced (rf acc (.get n)))))
+      ([acc _] (.incrementAndGet n) acc))))
 
 (defn juxt
   "Returns a reducing fn which compute all rfns at once and whose final return

@@ -4,9 +4,9 @@ More transducers and reducing functions for Clojure!
 
 [![Build Status](https://travis-ci.org/cgrand/xforms.png?branch=master)](https://travis-ci.org/cgrand/xforms)
 
-Transducers: `reduce`, `into`, `by-key`, `partition`, `pad`, `for`, `window` and `window-by-time`.
+Transducers: `reduce`, `into`, `count`, `by-key`, `partition`, `pad`, `for`, `window` and `window-by-time`.
 
-Reducing functions: `str`, `str!`, `avg`, `count`, `juxt`, `juxt-map` and `first`.
+Reducing functions: `str`, `str!`, `avg`, `juxt`, `juxt-map` and `first`.
 
 Transducing context: `transjuxt` (for performing several transductions in a single pass).
 
@@ -141,7 +141,7 @@ That's why most of the time the last stage of the sub-transducer will be a `x/re
 
 My faithful `(reduce-by kf f init coll)` is now `(into {} (x/by-key kf (x/reduce f init)))`.
 
-`(frequencies coll)` is `(into {} (x/by-key identity (x/reduce x/count)) coll)`.
+`(frequencies coll)` is `(into {} (x/by-key identity x/count) coll)`.
 
 ## On key-value pairs
 
