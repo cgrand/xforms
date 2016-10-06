@@ -233,7 +233,7 @@
       (fn
         ([] (rf))
         ([acc]
-          (rf (clj/reduce ((take @n) rf) acc padding-coll)))
+          (transduce (take @n) rf acc padding-coll))
         ([acc x]
           (vswap! n dec)
           (rf acc x))))))
@@ -441,8 +441,7 @@
     (let [[f args] (if (map? xforms-map)
                      [juxt-map (comp (by-key (map #(% first))) cat)]
                      [juxt (map #(% first))])]
-      (fn [rf]
-        ((reduce (apply f (sequence args xforms-map))) rf))))
+      (reduce (apply f (sequence args xforms-map)))))
   ([xforms-map coll]
     (transduce (transjuxt xforms-map) first coll)))
 
