@@ -4,9 +4,9 @@ More transducers and reducing functions for Clojure!
 
 [![Build Status](https://travis-ci.org/cgrand/xforms.png?branch=master)](https://travis-ci.org/cgrand/xforms)
 
-Transducers: `reduce`, `into`, `count`, `by-key`, `partition`, `pad`, `for`, `window` and `window-by-time`.
+Transducers: `reduce`, `into`, `count`, `by-key`, `partition`, `for`, `multiplex`, `window` and `window-by-time`.
 
-Reducing functions: `str`, `str!`, `avg`, `juxt`, `juxt-map` and `first`.
+Reducing functions: `str`, `str!`, `avg`, `juxt`, `juxt-map` and `last`.
 
 Transducing context: `transjuxt` (for performing several transductions in a single pass).
 
@@ -15,7 +15,7 @@ Transducing context: `transjuxt` (for performing several transductions in a sing
 Add this dependency to your project:
 
 ```clj
-[net.cgrand/xforms "0.3.1"]
+[net.cgrand/xforms "0.4.0"]
 ```
 
 ```clj
@@ -57,17 +57,17 @@ Add this dependency to your project:
              Execution time mean : 20,604297 µs
 ```
 
-Like `by-key`, `partition` also takes a transducer as an argument to allow further computation on the partition without buffering.
+Like `by-key`, `partition` also takes a transducer as last argument to allow further computation on the partition.
 
 ```clj
 => (sequence (x/partition 4 (x/reduce +)) (range 16))
 (6 22 38 54)
 ```
 
-Padding can be achieved using the `pad` function:
+Padding is achieved as usual:
 
 ```clj
-=> (sequence (x/partition 4 (comp (x/pad 4 (repeat :pad)) (x/into []))) (range 9))
+=> (sequence (x/partition 4 4 (repeat :pad) (x/into [])) (range 9))
 ([0 1 2 3] [4 5 6 7] [8 :pad :pad :pad])
 ```
 

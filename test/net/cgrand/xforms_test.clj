@@ -38,7 +38,7 @@
                    (let [acc (first (vswap! vaccs next))]
                      (if (pos? n)
                       (:acc (vswap! vstate assoc :acc acc :n (dec n)))
-                      (reduced (:acc (vswap! vstate assoc :acc acc :status :reduced))))))))
+                      (reduced (:acc (vswap! vstate assoc :acc acc :state :reduced))))))))
           res (transduce xform rf coll)]
       (check-acc res)
       (when-not (= :completed (:state @vstate))
@@ -66,10 +66,6 @@
     (is (trial (x/for [x % y (range x)] [x y])
           4 (range 16)))
     (is (trial (x/reduce +)
-          4 (range 16)))
-    (is (trial (x/pad 2 (repeat :pad))
-          4 (range 16)))
-    (is (trial (x/pad 8 (repeat :pad))
           4 (range 16)))))
 
 (deftest window-by-time
