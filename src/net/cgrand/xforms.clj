@@ -278,7 +278,7 @@
                   (if (zero? b)
                     ; this transduce may return a reduced because of mxrf wrapping reduceds coming from rf
                     (let [acc (transduce xform mxrf acc dq)]
-                      (dotimes [_ (min n step)] (.poll dq))
+                      (dotimes [_ (clj/min n step)] (.poll dq))
                       (vswap! barrier + step)
                       acc)
                     acc)))))))

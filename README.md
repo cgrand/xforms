@@ -15,7 +15,7 @@ Transducing context: `transjuxt` (for performing several transductions in a sing
 Add this dependency to your project:
 
 ```clj
-[net.cgrand/xforms "0.5.0"]
+[net.cgrand/xforms "0.5.1"]
 ```
 
 ```clj
