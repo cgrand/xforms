@@ -4,9 +4,9 @@ More transducers and reducing functions for Clojure!
 
 [![Build Status](https://travis-ci.org/cgrand/xforms.png?branch=master)](https://travis-ci.org/cgrand/xforms)
 
-Transducers: `reduce`, `into`, `count`, `by-key`, `partition`, `for`, `multiplex`, `window` and `window-by-time`.
+Transducers: `reduce`, `into`, `last`, `count`, `avg`, `min`, `minimum`, `max`, `maximum`, `str`, `by-key`, `partition`, `for`, `multiplex`, `transjuxt`, `window` and `window-by-time`.
 
-Reducing functions: `str`, `str!`, `avg`, `juxt`, `juxt-map` and `last`.
+Reducing functions (in `net.cgrand.xforms.rfs`): `min`, `minimum`, `max`, `maximum`, `str`, `str!`, `avg`, `juxt` and `last`.
 
 Transducing context: `transjuxt` (for performing several transductions in a single pass).
 
@@ -15,7 +15,7 @@ Transducing context: `transjuxt` (for performing several transductions in a sing
 Add this dependency to your project:
 
 ```clj
-[net.cgrand/xforms "0.4.0"]
+[net.cgrand/xforms "0.5.0"]
 ```
 
 ```clj
@@ -27,7 +27,7 @@ Add this dependency to your project:
 ```clj
 => (quick-bench (reduce str (range 256)))
              Execution time mean : 58,714946 µs
-=> (quick-bench (reduce x/str (range 256)))
+=> (quick-bench (reduce rf/str (range 256)))
              Execution time mean : 11,609631 µs
 ```
 
@@ -72,12 +72,12 @@ Padding is achieved as usual:
 ```
 
 
-`avg` is a reducing fn to compute the arithmetic mean. `juxt` and `juxt-map` are used to compute several reducing fns at once.
+`avg` is a transducer to compute the arithmetic mean. `transjuxt` is used to perform several transductions at once.
 
 ```clj
-=> (into {} (x/by-key odd? (x/reduce (x/juxt + x/avg))) (range 256))
+=> (into {} (x/by-key odd? (x/transjuxt [(x/reduce +) x/avg])) (range 256))
 {false [16256 127], true [16384 128]}
-=> (into {} (x/by-key odd? (x/reduce (x/juxt-map :sum + :mean x/avg :count x/count))) (range 256))
+=> (into {} (x/by-key odd? (x/transjuxt {:sum (x/reduce +) :mean x/avg :count x/count})) (range 256))
 {false {:sum 16256, :mean 127, :count 128}, true {:sum 16384, :mean 128, :count 128}}
 ```
 
@@ -163,8 +163,6 @@ Several xforms transducers and transducing contexts leverage `reduce-kv` and `kv
     <tr><td>3-arg `into`<br>(transducing context)<td>when `from` is a map<td>when `to` is a map
     <tr><td>`by-key`<br>(as a transducer)<td>when is `kfn` and `vfn` are unspecified or `nil`<td>when `pair` is `vector` or unspecified
     <tr><td>`by-key`<br>(as a transducing context on values)<td>no<td>no
-    <tr><td>`juxt`<td>when at least one of the children `rfns` is a kvrf<td>no
-    <tr><td>`juxt-map`<td>when at least one of the children `rfns` is a kvrf<td>no
   </tbody>
 <table>
 

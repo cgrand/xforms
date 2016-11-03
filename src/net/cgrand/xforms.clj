@@ -1,8 +1,9 @@
 (ns net.cgrand.xforms
   "Extra transducers for Clojure"
   {:author "Christophe Grand"}
-  (:refer-clojure :exclude [reduce into count for partition str juxt last])
-  (:require [clojure.core :as clj]))
+  (:refer-clojure :exclude [reduce into count for partition str last keys vals min max])
+  (:require [clojure.core :as clj]
+    [net.cgrand.xforms.rfs :as rf]))
 
 (defmacro for
   "Like clojure.core/for with the first expression being replaced by % (or _). Returns a transducer."
@@ -44,7 +45,7 @@
            ([~acc] (~rf ~acc))
            ([~acc ~binding] ~body)
            ~(if (destructuring-pair? binding)
-              `([~acc ~@binding] ~body)
+              `([~acc ~@(map #(vary-meta % dissoc :tag) binding)] ~body)
               `([~acc k# v#]
                  (let [~binding (clojure.lang.MapEntry. k# v#)] ~body))))))))
 
@@ -75,6 +76,13 @@
       ([acc x] (rf acc x))
       ([acc k v] (rf acc (clojure.lang.MapEntry. k v))))))
 
+(defmacro ^:private let-complete [[binding volatile] & body]
+  `(let [v# @~volatile]
+     (when-not (identical? v# ~volatile) ; self reference as sentinel
+       (vreset! ~volatile ~volatile)
+       (let [~binding v#]
+         ~@body))))
+
 (defn reduce
   "A transducer that reduces a collection to a 1-item collection consisting of only the reduced result.
    Unlike reduce but like transduce it does call the completing arity (1) of the reducing fn."
@@ -84,7 +92,8 @@
         (let [f (ensure-kvrf f)]
           (kvrf
             ([] (rf))
-            ([acc] (rf (unreduced (rf acc (f (unreduced @vacc))))))
+            ([acc] (let-complete [f-acc vacc]
+                     (rf (unreduced (rf acc (f (unreduced f-acc)))))))
             ([acc x]
               (if (reduced? (vswap! vacc f x))
                 (reduced acc)
@@ -133,20 +142,35 @@
         (rf (clj/reduce-kv rf (rf) from))
         (rf (clj/reduce rf (rf) from))))))
 
-(defmacro ^:private or-instance? [class x y]
-  (let [xsym (gensym 'x_)]
-    `(let [~xsym ~x]
-       (if (instance? ~class ~xsym) ~(with-meta xsym {:tag class}) ~y))))
+(defn minimum
+  ([comparator]
+    (minimum comparator nil))
+  ([comparator absolute-maximum]
+    (reduce (rf/minimum comparator absolute-maximum))))
 
-(defn str!
-  "Like xforms/str but returns a StringBuilder."
-  ([] (StringBuilder.))
-  ([sb] (or-instance? StringBuilder sb (StringBuilder. (clj/str sb)))) ; the instance? checks are for compatibility with str in case of seeded reduce/transduce.
-  ([sb x] (.append (or-instance? StringBuilder sb (StringBuilder. (clj/str sb))) x)))
+(defn maximum
+  ([comparator]
+    (maximum comparator nil))
+  ([^java.util.Comparator comparator absolute-minimum]
+    (reduce (rf/maximum comparator absolute-minimum))))
 
-(def str
-  "Reducing function to build strings in linear time. Acts as replacement for clojure.core/str in a reduce/transduce call."
-  (completing str! clj/str))
+(def min (reduce rf/min))
+
+(def max (reduce rf/max))
+
+(defn vals [rf]
+  (kvrf
+    ([] (rf))
+    ([acc] (rf acc))
+    ([acc kv] (rf acc (val kv)))
+    ([acc k v] (rf acc v))))
+
+(defn keys [rf]
+  (kvrf
+    ([] (rf))
+    ([acc] (rf acc))
+    ([acc kv] (rf acc (key kv)))
+    ([acc k v] (rf acc k))))
 
 ;; for both map entries and vectors 
 (defn- key' [kv] (nth kv 0))
@@ -194,7 +218,7 @@
           (if (and (nil? kfn) (nil? vfn))
             (kvrf self
               ([] (rf))
-              ([acc] (rf (clj/reduce (fn [acc krf] (krf acc)) acc (vals (persistent! @m)))))
+              ([acc] (let-complete [m m] (rf (clj/reduce (fn [acc krf] (krf acc)) acc (clj/vals (persistent! m))))))
               ([acc x]
                 (self acc (key' x) (val' x)))
               ([acc k v]
@@ -211,9 +235,9 @@
                      acc))))
             (let [kfn (or kfn key')
                   vfn (or vfn val')]
-              (fn
+              (kvrf self
                 ([] (rf))
-                ([acc] (rf (clj/reduce (fn [acc krf] (krf acc)) acc (vals (persistent! @m)))))
+                ([acc] (let-complete [m m] (rf (clj/reduce (fn [acc krf] (krf acc)) acc (clj/vals (persistent! m))))))
                 ([acc x]
                   (let [k (kfn x)
                         krf (or (get @m k) (doto (xform (make-rf k)) (->> (vswap! m assoc! k))))
@@ -226,7 +250,8 @@
                         (do
                           (vswap! m assoc! k nop-rf)
                           (krf @acc)))
-                      acc)))))))))))
+                      acc)))
+                ([acc k v] (self acc (clojure.lang.MapEntry. k v)))))))))))
 
 (defn partition
   "Returns a partitioning transducer. Each partition is independently transformed using the xform transducer."
@@ -246,7 +271,7 @@
                 xform (comp (map #(if (identical? dq %) nil %)) xform)]
             (fn
               ([] (rf))
-              ([acc] (rf acc))
+              ([acc] (.clear dq) (rf acc))
               ([acc x]
                 (let [b (vswap! barrier dec)]
                   (when (< b n) (.add dq (if (nil? x) dq x)))
@@ -267,9 +292,12 @@
         (fn
           ([] (rf))
           ([acc] (if (< @barrier n)
-                   (let [xform (comp cat (take n) xform)]
-                     ; don't use mxrf for completion: we want completion and don't want reduced-wrapping 
-                     (transduce xform rf acc [dq pad]))
+                   (let [xform (comp cat (take n) xform)
+                         ; don't use mxrf for completion: we want completion and don't want reduced-wrapping 
+                         acc (transduce xform rf acc [dq pad])]
+                     (vreset! @barrier n)
+                     (.clear dq)
+                     acc)
                    acc))
           ([acc x]
             (let [b (vswap! barrier dec)]
@@ -282,13 +310,7 @@
                   acc)
                 acc))))))))
 
-(defn avg
-  "Reducing fn to compute the arithmetic mean."
-  ([] (transient [0 0]))
-  ([[n sum]] (/ sum n))
-  ([acc x] (avg acc x 1))
-  ([[n sum :as acc] x w]
-    (-> acc (assoc! 0 (+ n w)) (assoc! 1 (+ sum (* w x))))))
+(def avg (reduce rf/avg))
 
 (defn window
   "Returns a transducer which computes an accumulator over the last n items
@@ -393,25 +415,6 @@
       ([acc] (rf (unreduced (rf acc (.get n)))))
       ([acc _] (.incrementAndGet n) acc))))
 
-(defn juxt
-  "Returns a reducing fn which compute all rfns at once and whose final return
-   value is a vector of the final return values of each rfns."
-  [& rfns]
-  (let [rfns (mapv ensure-kvrf rfns)]
-    (kvrf
-      ([] (mapv #(vector % (volatile! (%))) rfns))
-      ([acc] (mapv (fn [[rf vacc]] (rf (unreduced @vacc))) acc))
-      ([acc x]
-        (let [some-unreduced (clj/reduce (fn [some-unreduced [rf vacc]] 
-                                           (when-not (reduced? @vacc) (vswap! vacc rf x) true))
-                               false acc)]
-          (if some-unreduced acc (reduced acc))))
-      ([acc k v]
-        (let [some-unreduced (clj/reduce (fn [some-unreduced [rf vacc]] 
-                                           (when-not (reduced? @vacc) (vswap! vacc rf k v) true))
-                               false acc)]
-          (if some-unreduced acc (reduced acc)))))))
-
 (defn multiplex
   "Returns a transducer that runs several transducers (sepcified by xforms) in parallel.
    If xforms is a map, values of the map are transducers and keys are used to tag each
@@ -468,22 +471,7 @@
               (ensure-reduced acc)
               acc)))))))
 
-(defn juxt-map
-  [& key-rfns]
-  (let [f (apply juxt (take-nth 2 (next key-rfns)))
-        keys (vec (take-nth 2 key-rfns))]
-    (let [f (ensure-kvrf f)]
-      (kvrf
-        ([] (f))
-        ([acc] (zipmap keys (f acc)))
-        ([acc x] (f acc x))
-        ([acc k v] (f acc k v))))))
-
-(defn last
-  "Reducing function that returns the last value."
-  ([] nil)
-  ([x] x)
-  ([_ x] x))
+(def last (reduce rf/last))
 
 (defn transjuxt
   "Performs several transductions over coll at once. xforms-map can be a map or a sequential collection.
@@ -495,20 +483,12 @@
                           (into {})
                           (reduce (kvrf
                                     ([] (clj/reduce (fn [v _] (conj! v nil))
-                                          (transient []) (range (count xforms-map))))
+                                          (transient []) (range (clj/count xforms-map))))
                                     ([v] (persistent! v))
                                     ([v i x] (assoc! v i x)))))
-          xforms-map (if (map? xforms-map) xforms-map (zipmap (range xforms-map)))]
+          xforms-map (if (map? xforms-map) xforms-map (zipmap (range) xforms-map))]
       (comp
         (multiplex (into {} (by-key (map #(comp % (take 1)))) xforms-map))
         collect-xform)))
   ([xforms-map coll]
-    (transduce (transjuxt xforms-map) last coll)))
-
-;; map stuff
-(defn update 
-  ([m k xform]
-    (update m k xform nil))
-  ([m k xform not-found]
-    (let [rf (xform (fn ([m] m) ([m v] (assoc m k v))))]
-      (rf (unreduced (rf (dissoc m k) (get m k not-found)))))))
+    (transduce (transjuxt xforms-map) rf/last coll)))
