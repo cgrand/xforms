@@ -4,7 +4,7 @@ More transducers and reducing functions for Clojure!
 
 [![Build Status](https://travis-ci.org/cgrand/xforms.png?branch=master)](https://travis-ci.org/cgrand/xforms)
 
-Transducers: `reduce`, `into`, `last`, `count`, `avg`, `min`, `minimum`, `max`, `maximum`, `str`, `by-key`, `partition`, `for`, `multiplex`, `transjuxt`, `window` and `window-by-time`.
+Transducers: `reduce`, `into`, `last`, `count`, `avg`, `min`, `minimum`, `max`, `maximum`, `str`, `by-key`, `partition`, `reductions`, `for`, `multiplex`, `transjuxt`, `window` and `window-by-time`.
 
 Reducing functions (in `net.cgrand.xforms.rfs`): `min`, `minimum`, `max`, `maximum`, `str`, `str!`, `avg`, `juxt` and `last`.
 
@@ -15,7 +15,7 @@ Transducing context: `transjuxt` (for performing several transductions in a sing
 Add this dependency to your project:
 
 ```clj
-[net.cgrand/xforms "0.5.1"]
+[net.cgrand/xforms "0.6.0"]
 ```
 
 ```clj
@@ -199,6 +199,11 @@ Evaluation count : 24 in 6 samples of 4 calls.
     Execution time std-deviation : 364,932996 µs
 ```
 
+## Changelog
+### 0.6.0
+
+ * Added `x/reductions`
+ * Now if the first collection expression in `x/for` is not a placeholder then `x/for` works like `x/for` but returns an eduction and performs all iterations using reduce. 
 
 ## License
 

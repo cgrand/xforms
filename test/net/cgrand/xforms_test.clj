@@ -61,12 +61,26 @@
           8 (range 16)))
     (is (trial (x/partition 3 (take 2))
           8 (range 2)))
+    (is (trial (x/reductions conj [])
+          8 (range 2)))
+    (is (trial (x/reductions conj)
+          8 (range 2)))
     (is (trial (x/into [])
           4 (range 16)))
     (is (trial (x/for [x % y (range x)] [x y])
           4 (range 16)))
     (is (trial (x/reduce +)
           4 (range 16)))))
+
+(deftest reductions
+  (is (= (into [] (x/reductions +) (range 10)) [0 0 1 3 6 10 15 21 28 36 45]))
+  (is (= (into [] (x/reductions +) (range 0)) [0]))
+  (is (= (into [] (x/reductions +) (range 1)) [0 0]))
+  (is (= (into [] (x/reductions +) (range 2)) [0 0 1]))
+  (is (= (into [] (comp (x/reductions +) (take 2)) (range)) [0 0]))
+  (is (= (into [] (comp (x/reductions +) (take 3)) (range)) [0 0 1]))
+  (is (= (into [] (comp (take 3) (x/reductions +)) (range)) [0 0 1 3]))
+  (is (= (into [] (x/reductions (constantly (reduced 42)) 0) (range)) [0 42])))
 
 (deftest window-by-time
   (is (= (into 

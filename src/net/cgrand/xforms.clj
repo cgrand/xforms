@@ -1,16 +1,17 @@
 (ns net.cgrand.xforms
   "Extra transducers for Clojure"
   {:author "Christophe Grand"}
-  (:refer-clojure :exclude [reduce into count for partition str last keys vals min max])
+  (:refer-clojure :exclude [reduce reductions into count for partition str last keys vals min max])
   (:require [clojure.core :as clj]
     [net.cgrand.xforms.rfs :as rf]))
 
 (defmacro for
-  "Like clojure.core/for with the first expression being replaced by % (or _). Returns a transducer."
+  "Like clojure.core/for with the first expression being replaced by % (or _). Returns a transducer.
+   When the first expression is not % (or _) returns an eduction."
   [[binding %or_ & seq-exprs] body-expr]
-  (assert (and (symbol? %or_) (#{"%" "_"} (name %or_)))
-    "The second element of the comprehension vector must be % or _.")
-  (let [rf (gensym 'rf)
+  (if-not (and (symbol? %or_) (#{"%" "_"} (name %or_)))
+    `(eduction (for [~binding ~'% ~@seq-exprs] ~body-expr) ~%or_)
+    (let [rf (gensym 'rf)
         acc (gensym 'acc)
         pair? #(and (vector? %) (= 2 (clj/count %)))
         destructuring-pair? (every-pred pair?
@@ -47,7 +48,7 @@
            ~(if (destructuring-pair? binding)
               `([~acc ~@(map #(vary-meta % dissoc :tag) binding)] ~body)
               `([~acc k# v#]
-                 (let [~binding (clojure.lang.MapEntry. k# v#)] ~body))))))))
+                 (let [~binding (clojure.lang.MapEntry. k# v#)] ~body)))))))))
 
 (defprotocol KvRfable "Protocol for reducing fns that accept key and val as separate arguments."
   (some-kvrf [f] "Returns a kvrf or nil"))
@@ -309,6 +310,30 @@
                   (vswap! barrier + step)
                   acc)
                 acc))))))))
+
+(defn reductions
+  "Transient version of reductions. There's a difference in behavior when init is not provided: (f) is used.
+   So x/reductions works like x/reduce or transduce, not like reduce and reductions when no init and 1-item input."
+  ([f] (reductions f (f)))
+  ([f init]
+    (fn [rf]
+      (let [prev (volatile! nil)]
+        (vreset! prev prev) ; cheap sentinel to detect the first call, this is done to avoid having a 1-item delay
+        (fn
+          ([] (rf)) ; no you can't emit init there since there's no guarantee that this arity is going to be called
+          ([acc] (if (identical? @prev prev)
+                   (rf (unreduced (rf acc init)))
+                   (rf acc)))
+          ([acc x]
+            (if (identical? @prev prev)
+              (let [acc (rf acc (vreset! prev init))]
+                (if (reduced? acc)
+                  acc
+                  (recur acc x)))
+              (let [curr (vswap! prev f x)]
+                (if (reduced? curr)
+                  (ensure-reduced (rf acc @curr))
+                  (rf acc curr))))))))))
 
 (def avg (reduce rf/avg))
 
