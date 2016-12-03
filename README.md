@@ -4,9 +4,15 @@ More transducers and reducing functions for Clojure!
 
 [![Build Status](https://travis-ci.org/cgrand/xforms.png?branch=master)](https://travis-ci.org/cgrand/xforms)
 
-Transducers: `reduce`, `into`, `last`, `count`, `avg`, `min`, `minimum`, `max`, `maximum`, `str`, `by-key`, `partition`, `reductions`, `for`, `multiplex`, `transjuxt`, `window` and `window-by-time`.
+*Transducers* (in `net.cgrand.xforms`) can be classified in three groups: regular ones, higher-order ones
+(which accept other transducers as arguments) and 1-item ones which emit only 1 item out no matter how many went in.
+They generally only make sense in the context of a higher-order transducer. 
 
-Reducing functions (in `net.cgrand.xforms.rfs`): `min`, `minimum`, `max`, `maximum`, `str`, `str!`, `avg`, `juxt` and `last`.
+ * regular ones: `partition`, `reductions`, `for`, `window` and `window-by-time`
+ * higher-order ones: `by-key`, `multiplex`, `transjuxt`
+ * 1-item ones: `reduce`, `into`, `last`, `count`, `avg`, `min`, `minimum`, `max`, `maximum`, `str`
+ 
+*Reducing functions* (in `net.cgrand.xforms.rfs`): `min`, `minimum`, `max`, `maximum`, `str`, `str!`, `avg`, `juxt` and `last`.
 
 Transducing context: `transjuxt` (for performing several transductions in a single pass).
 
