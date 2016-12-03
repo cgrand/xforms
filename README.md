@@ -46,6 +46,8 @@ Add this dependency to your project:
              Execution time mean : 373,814060 µs
 ```
 
+You can also use `for` like `clojure.core/for`: `(x/for [i (range 128) j (range i)] (* i j))` expands to `(eduction (x/for [i % j (range i)] (* i j)) (range 128))`.
+
 `by-key` and `reduce` are two new transducers. Here is an example usage:
 
 ```clj
