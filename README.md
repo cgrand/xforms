@@ -8,8 +8,8 @@ More transducers and reducing functions for Clojure!
 (which accept other transducers as arguments) and 1-item ones which emit only 1 item out no matter how many went in.
 They generally only make sense in the context of a higher-order transducer. 
 
- * regular ones: `partition`, `reductions`, `for`, `window` and `window-by-time`
- * higher-order ones: `by-key`, `multiplex`, `transjuxt`
+ * regular ones: `partition` (1 arg), `reductions`, `for`, `window` and `window-by-time`
+ * higher-order ones: `by-key`, `multiplex`, `transjuxt`, `partition` (2+ args)
  * 1-item ones: `reduce`, `into`, `last`, `count`, `avg`, `min`, `minimum`, `max`, `maximum`, `str`
  
 *Reducing functions* (in `net.cgrand.xforms.rfs`): `min`, `minimum`, `max`, `maximum`, `str`, `str!`, `avg`, `juxt` and `last`.
