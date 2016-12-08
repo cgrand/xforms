@@ -14,14 +14,14 @@ They generally only make sense in the context of a higher-order transducer.
  
 *Reducing functions* (in `net.cgrand.xforms.rfs`): `min`, `minimum`, `max`, `maximum`, `str`, `str!`, `avg`, `juxt` and `last`.
 
-Transducing context: `transjuxt` (for performing several transductions in a single pass).
+Transducing contexts: `transjuxt` (for performing several transductions in a single pass), `into`, `count`.
 
 ## Usage
 
 Add this dependency to your project:
 
 ```clj
-[net.cgrand/xforms "0.6.0"]
+[net.cgrand/xforms "0.7.0"]
 ```
 
 ```clj
@@ -208,6 +208,12 @@ Evaluation count : 24 in 6 samples of 4 calls.
 ```
 
 ## Changelog
+
+### 0.7.0
+
+ * Added 2-arg arity to `x/count` where it acts as a transducing context e.g. `(x/count (filter odd?) (range 10))`
+ * Preserve type hints in `x/for` (and generally with `kvrf`).
+
 ### 0.6.0
 
  * Added `x/reductions`
