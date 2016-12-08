@@ -46,7 +46,7 @@
            ([~acc] (~rf ~acc))
            ([~acc ~binding] ~body)
            ~(if (destructuring-pair? binding)
-              `([~acc ~@(map #(vary-meta % dissoc :tag) binding)] ~body)
+              `([~acc ~@binding] ~body)
               `([~acc k# v#]
                  (let [~binding (clojure.lang.MapEntry. k# v#)] ~body)))))))))
 
@@ -67,7 +67,10 @@
        (some-kvrf [this#] this#)
        clojure.lang.IFn
        ~@(clj/for [[args & body] fn-bodies]
-           `(invoke [~name ~@args] ~@body)))))
+           (let [nohint-args (map (fn [arg] (if (:tag (meta arg)) (gensym 'arg) arg)) args)
+                 rebind (mapcat (fn [arg nohint]
+                                  (when-not (= arg nohint) [arg nohint])) args nohint-args)]
+             `(invoke [~name ~@nohint-args] (let [~@rebind] ~@body)))))))
 
 (defn ensure-kvrf [rf]
   (or (some-kvrf rf)
