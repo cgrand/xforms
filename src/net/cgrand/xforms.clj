@@ -433,12 +433,17 @@
                  (vswap! vwacc f x))
                acc))))))))
 
-(defn count [rf]
-  (let [n (java.util.concurrent.atomic.AtomicLong.)] 
-    (fn
-      ([] (rf))
-      ([acc] (rf (unreduced (rf acc (.get n)))))
-      ([acc _] (.incrementAndGet n) acc))))
+(defn count
+  "Count the number of items. Either used directly as a transducer or invoked with two args
+   as a transducing context."
+  ([rf]
+    (let [n (java.util.concurrent.atomic.AtomicLong.)]
+      (fn
+        ([] (rf))
+        ([acc] (rf (unreduced (rf acc (.get n)))))
+        ([acc _] (.incrementAndGet n) acc))))
+  ([xform coll]
+    (transduce (comp xform count) rf/last coll)))
 
 (defn multiplex
   "Returns a transducer that runs several transducers (sepcified by xforms) in parallel.
