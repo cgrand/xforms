@@ -54,7 +54,7 @@
           ~(if (destructuring-pair? binding)
              `([~acc ~@binding] ~body)
              `([~acc k# v#]
-                (let [~binding (macros/case :clj (clojure.lang.MapEntry. k# v#) :cljs [k# v#])] ~body)))))))))
+                (let [~binding (net.cgrand.macrovich/case :clj (clojure.lang.MapEntry. k# v#) :cljs [k# v#])] ~body)))))))))
 
 (defmacro kvrf [name? & fn-bodies]
   (let [name (if (symbol? name?) name? (gensym '_))
