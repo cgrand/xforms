@@ -1,18 +1,33 @@
 (ns net.cgrand.xforms.rfs
   {:author "Christophe Grand"}
   (:refer-clojure :exclude [str last min max])
-  (:require [clojure.core :as clj]))
+  #?(:cljs (:require-macros
+             [net.cgrand.macrovich :as macros]
+             [net.cgrand.xforms.rfs :refer [or-instance?]])
+      :clj (:require [net.cgrand.macrovich :as macros]))
+  (:require [#?(:clj clojure.core :cljs cljs.core) :as core])
+  #?(:cljs (:import [goog.string StringBuffer])))
 
+(macros/deftime
+  (defmacro ^:private or-instance? [class x y]
+    (let [xsym (gensym 'x_)]
+      `(let [~xsym ~x]
+         (if (instance? ~class ~xsym) ~(with-meta xsym {:tag class}) ~y)))))
+
+(declare str!)
+
+(macros/usetime
+  
 (defn minimum
-  ([comparator]
-    (minimum comparator nil))
-  ([^java.util.Comparator comparator absolute-maximum]
-    (fn
-      ([] ::+∞)
-      ([x] (if (identical? ::+∞ x)
-             absolute-maximum
-             x))
-      ([a b] (if (or (identical? ::+∞ a) (pos? (.compare comparator a b))) b a)))))
+ ([comparator]
+   (minimum comparator nil))
+ ([^java.util.Comparator comparator absolute-maximum]
+   (fn
+     ([] ::+∞)
+     ([x] (if (identical? ::+∞ x)
+            absolute-maximum
+            x))
+     ([a b] (if (or (identical? ::+∞ a) (pos? (.compare comparator a b))) b a)))))
 
 (defn maximum
   ([comparator]
@@ -43,20 +58,15 @@
   ([x] x)
   ([_ x] x))
 
-(defmacro ^:private or-instance? [class x y]
-  (let [xsym (gensym 'x_)]
-    `(let [~xsym ~x]
-       (if (instance? ~class ~xsym) ~(with-meta xsym {:tag class}) ~y))))
-
 (defn str!
   "Like xforms/str but returns a StringBuilder."
-  ([] (StringBuilder.))
-  ([sb] (or-instance? StringBuilder sb (StringBuilder. (clj/str sb)))) ; the instance? checks are for compatibility with str in case of seeded reduce/transduce.
-  ([sb x] (.append (or-instance? StringBuilder sb (StringBuilder. (clj/str sb))) x)))
+  ([] (#?(:clj StringBuilder. :cljs StringBuffer.)))
+  ([sb] (or-instance? #?(:clj StringBuilder :cljs StringBuffer) sb (#?(:clj StringBuilder. :cljs StringBuffer.) (core/str sb)))) ; the instance? checks are for compatibility with str in case of seeded reduce/transduce.
+  ([sb x] (.append (or-instance? #?(:clj StringBuilder :cljs StringBuffer) sb (#?(:clj StringBuilder. :cljs StringBuffer.) (core/str sb))) x)))
 
 (def str
   "Reducing function to build strings in linear time. Acts as replacement for clojure.core/str in a reduce/transduce call."
-  (completing str! clj/str))
+  (completing str! core/str))
 
 #_(defn juxt
    "Returns a reducing fn which compute all rfns at once and whose final return
@@ -67,12 +77,12 @@
        ([] (mapv #(vector % (volatile! (%))) rfns))
        ([acc] (mapv (fn [[rf vacc]] (rf (unreduced @vacc))) acc))
        ([acc x]
-         (let [some-unreduced (clj/reduce (fn [some-unreduced [rf vacc]] 
+         (let [some-unreduced (core/reduce (fn [some-unreduced [rf vacc]] 
                                             (when-not (reduced? @vacc) (vswap! vacc rf x) true))
                                 false acc)]
            (if some-unreduced acc (reduced acc))))
        ([acc k v]
-         (let [some-unreduced (clj/reduce (fn [some-unreduced [rf vacc]] 
+         (let [some-unreduced (core/reduce (fn [some-unreduced [rf vacc]] 
                                             (when-not (reduced? @vacc) (vswap! vacc rf k v) true))
                                 false acc)]
            (if some-unreduced acc (reduced acc)))))))
@@ -87,3 +97,4 @@
          ([acc] (zipmap keys (f acc)))
          ([acc x] (f acc x))
          ([acc k v] (f acc k v))))))
+)
