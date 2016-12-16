@@ -17,28 +17,37 @@
 (declare str!)
 
 (macros/usetime
+
+#? (:cljs
+     (defn ^:private cmp [f a b]
+       (let [r (f a b)]
+         (cond
+           (number? r) r
+           r -1
+           (f b a) 1
+           :else 0))))
   
 (defn minimum
  ([comparator]
    (minimum comparator nil))
- ([^java.util.Comparator comparator absolute-maximum]
+ ([#?(:clj ^java.util.Comparator comparator :cljs comparator) absolute-maximum]
    (fn
      ([] ::+∞)
-     ([x] (if (identical? ::+∞ x)
+     ([x] (if (#?(:clj identical? :cljs keyword-identical?) ::+∞ x)
             absolute-maximum
             x))
-     ([a b] (if (or (identical? ::+∞ a) (pos? (.compare comparator a b))) b a)))))
+     ([a b] (if (or (#?(:clj identical? :cljs keyword-identical?) ::+∞ a) (pos? (#?(:clj .compare :cljs cmp) comparator a b))) b a)))))
 
 (defn maximum
   ([comparator]
     (maximum comparator nil))
-  ([^java.util.Comparator comparator absolute-minimum]
+  ([#?(:clj ^java.util.Comparator comparator :cljs comparator) absolute-minimum]
     (fn
       ([] ::-∞)
-      ([x] (if (identical? ::-∞ x)
+      ([x] (if (#?(:clj identical? :cljs keyword-identical?) ::-∞ x)
              absolute-minimum
              x))
-      ([a b] (if (or (identical? ::-∞ a) (neg? (.compare comparator a b))) b a)))))
+      ([a b] (if (or (#?(:clj identical? :cljs keyword-identical?) ::-∞ a) (neg? (#?(:clj .compare :cljs cmp) comparator a b))) b a)))))
 
 (def min (minimum compare))
 

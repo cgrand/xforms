@@ -7,7 +7,8 @@
       :clj (:require [net.cgrand.macrovich :as macros]))
   (:refer-clojure :exclude [reduce reductions into count for partition str last keys vals min max])
   (:require [#?(:clj clojure.core :cljs cljs.core) :as core]
-    [net.cgrand.xforms.rfs :as rf]))
+    [net.cgrand.xforms.rfs :as rf])
+  #?(:cljs (:import [goog.structs Queue])))
 
 (macros/deftime
 
@@ -169,7 +170,7 @@
 (defn maximum
   ([comparator]
     (maximum comparator nil))
-  ([^java.util.Comparator comparator absolute-minimum]
+  ([comparator absolute-minimum]
     (reduce (rf/maximum comparator absolute-minimum))))
 
 (def min (reduce rf/min))
@@ -284,7 +285,7 @@
       (let [xform pad-or-xform]
         (fn [rf]
           (let [mxrf (multiplexable rf)
-                dq (java.util.ArrayDeque. n)
+                dq #?(:clj (java.util.ArrayDeque. n) :cljs (Queue.))
                 barrier (volatile! n)
                 xform (comp (map #(if (identical? dq %) nil %)) xform)]
             (fn
@@ -292,11 +293,11 @@
               ([acc] (.clear dq) (rf acc))
               ([acc x]
                 (let [b (vswap! barrier dec)]
-                  (when (< b n) (.add dq (if (nil? x) dq x)))
+                  (when (< b n) (#?(:clj .add :cljs .enqueue) dq (if (nil? x) dq x)))
                   (if (zero? b)
                     ; this transduce may return a reduced because of mxrf wrapping reduceds coming from rf
-                    (let [acc (transduce xform mxrf acc dq)]
-                      (dotimes [_ (core/min n step)] (.poll dq))
+                    (let [acc (transduce xform mxrf acc #?(:clj dq :cljs (.getValues dq)))]
+                      (dotimes [_ (core/min n step)] (#?(:clj .poll :cljs .dequeue) dq))
                       (vswap! barrier + step)
                       acc)
                     acc)))))))
@@ -304,7 +305,7 @@
   ([n step pad xform]
     (fn [rf]
       (let [mxrf (multiplexable rf)
-            dq (java.util.ArrayDeque. n)
+            dq #?(:clj (java.util.ArrayDeque. n) :cljs (Queue.))
             barrier (volatile! n)
             xform (comp (map #(if (identical? dq %) nil %)) xform)]
         (fn
@@ -312,18 +313,18 @@
           ([acc] (if (< @barrier n)
                    (let [xform (comp cat (take n) xform)
                          ; don't use mxrf for completion: we want completion and don't want reduced-wrapping 
-                         acc (transduce xform rf acc [dq pad])]
+                         acc (transduce xform rf acc [(.getValues dq) pad])]
                      (vreset! @barrier n)
                      (.clear dq)
                      acc)
                    acc))
           ([acc x]
             (let [b (vswap! barrier dec)]
-              (when (< b n) (.add dq (if (nil? x) dq x)))
+              (when (< b n) (#?(:clj .add :cljs .enqueue) dq (if (nil? x) dq x)))
               (if (zero? b)
                 ; this transduce may return a reduced because of mxrf wrapping reduceds coming from rf
-                (let [acc (transduce xform mxrf acc dq)]
-                  (dotimes [_ (min n step)] (.poll dq))
+                (let [acc (transduce xform mxrf acc #?(:clj dq :cljs (.getValues dq)))]
+                  (dotimes [_ (min n step)] (#?(:clj .poll :cljs .dequeue) dq))
                   (vswap! barrier + step)
                   acc)
                 acc))))))))
