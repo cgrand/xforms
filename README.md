@@ -1,6 +1,6 @@
 # xforms
 
-More transducers and reducing functions for Clojure!
+More transducers and reducing functions for Clojure(script)!
 
 [![Build Status](https://travis-ci.org/cgrand/xforms.png?branch=master)](https://travis-ci.org/cgrand/xforms)
 
@@ -21,7 +21,7 @@ Transducing contexts: `transjuxt` (for performing several transductions in a sin
 Add this dependency to your project:
 
 ```clj
-[net.cgrand/xforms "0.7.0"]
+[net.cgrand/xforms "0.7.1"]
 ```
 
 ```clj
@@ -208,6 +208,10 @@ Evaluation count : 24 in 6 samples of 4 calls.
 ```
 
 ## Changelog
+
+### 0.7.1
+
+ * Works with Clojurescript (even self-hosted).
 
 ### 0.7.0
 
