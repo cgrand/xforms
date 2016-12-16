@@ -1,5 +1,5 @@
 (ns net.cgrand.xforms-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [is deftest testing]]
             [net.cgrand.xforms :as x]))
 
 (defn trial
@@ -9,7 +9,7 @@
   n is the number of calls to rf before it returns a reduced.
   accs is a collection of successive return values for rf."
   ([xform n coll]
-    (trial xform n (repeatedly #(Object.)) coll))
+    (trial xform n (repeatedly #(#?(:clj Object. :clj js/Object.))) coll))
   ([xform n accs coll]
     (let [vaccs (volatile! accs)
           vstate (volatile! {:n n :acc (first @vaccs) :state :init})
@@ -82,36 +82,37 @@
   (is (= (into [] (comp (take 3) (x/reductions +)) (range)) [0 0 1 3]))
   (is (= (into [] (x/reductions (constantly (reduced 42)) 0) (range)) [0 42])))
 
-(deftest window-by-time
-  (is (= (into 
-           []
-           (x/window-by-time :ts 4
-             (fn 
-               ([] clojure.lang.PersistentQueue/EMPTY)
-               ([q] (vec q))
-               ([q x] (conj q x)))
-             (fn [q _] (pop q)))
-           (map (fn [x] {:ts x}) (concat (range 0 2 0.5) (range 3 5 0.25))))
-         [[{:ts 0}] ; t =  0
-  [{:ts 0}] ; t =  0.25
-  [{:ts 0} {:ts 0.5}] ; t =  0.5
-  [{:ts 0} {:ts 0.5}] ; t =  0.75
-  [{:ts 0.5} {:ts 1.0}] ; t =  1.0
-  [{:ts 0.5} {:ts 1.0}] ; t =  1.25
-  [{:ts 1.0} {:ts 1.5}] ; t =  1.5
-  [{:ts 1.0} {:ts 1.5}] ; t =  1.75
-  [{:ts 1.5}] ; t =  2.0
-  [{:ts 1.5}] ; t =  2.25
-  [] ; t =  2.5
-  [] ; t =  2.75
-  [{:ts 3}] ; t =  3.0
-  [{:ts 3} {:ts 3.25}] ; t =  3.25
-  [{:ts 3} {:ts 3.25} {:ts 3.5}] ; t =  3.5
-  [{:ts 3} {:ts 3.25} {:ts 3.5} {:ts 3.75}] ; t =  3.75
-  [{:ts 3.25} {:ts 3.5} {:ts 3.75} {:ts 4.0}] ; t =  4.0
-  [{:ts 3.5} {:ts 3.75} {:ts 4.0} {:ts 4.25}] ; t =  4.25
-  [{:ts 3.75} {:ts 4.0} {:ts 4.25} {:ts 4.5}] ; t =  4.5
-  [{:ts 4.0} {:ts 4.25} {:ts 4.5} {:ts 4.75}]]))) ; t =  4.75
+#?(:clj
+    (deftest window-by-time
+      (is (= (into 
+               []
+               (x/window-by-time :ts 4
+                 (fn 
+                   ([] clojure.lang.PersistentQueue/EMPTY)
+                   ([q] (vec q))
+                   ([q x] (conj q x)))
+                 (fn [q _] (pop q)))
+               (map (fn [x] {:ts x}) (concat (range 0 2 0.5) (range 3 5 0.25))))
+             [[{:ts 0}] ; t =  0
+      [{:ts 0}] ; t =  0.25
+      [{:ts 0} {:ts 0.5}] ; t =  0.5
+      [{:ts 0} {:ts 0.5}] ; t =  0.75
+      [{:ts 0.5} {:ts 1.0}] ; t =  1.0
+      [{:ts 0.5} {:ts 1.0}] ; t =  1.25
+      [{:ts 1.0} {:ts 1.5}] ; t =  1.5
+      [{:ts 1.0} {:ts 1.5}] ; t =  1.75
+      [{:ts 1.5}] ; t =  2.0
+      [{:ts 1.5}] ; t =  2.25
+      [] ; t =  2.5
+      [] ; t =  2.75
+      [{:ts 3}] ; t =  3.0
+      [{:ts 3} {:ts 3.25}] ; t =  3.25
+      [{:ts 3} {:ts 3.25} {:ts 3.5}] ; t =  3.5
+      [{:ts 3} {:ts 3.25} {:ts 3.5} {:ts 3.75}] ; t =  3.75
+      [{:ts 3.25} {:ts 3.5} {:ts 3.75} {:ts 4.0}] ; t =  4.0
+      [{:ts 3.5} {:ts 3.75} {:ts 4.0} {:ts 4.25}] ; t =  4.25
+      [{:ts 3.75} {:ts 4.0} {:ts 4.25} {:ts 4.5}] ; t =  4.5
+      [{:ts 4.0} {:ts 4.25} {:ts 4.5} {:ts 4.75}]])))) ; t =  4.75
 
 (deftest do-not-kvreduce-vectors
   (is (= {0 nil 1 nil} (x/into {} (x/for [[k v] %] [k v]) [[0] [1]])))
