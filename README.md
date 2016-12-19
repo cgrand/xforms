@@ -209,6 +209,10 @@ Evaluation count : 24 in 6 samples of 4 calls.
 
 ## Changelog
 
+### 0.7.2
+
+ * Fix transients perf issue in Clojurescript
+
 ### 0.7.1
 
  * Works with Clojurescript (even self-hosted).
