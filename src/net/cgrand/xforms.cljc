@@ -92,7 +92,7 @@
 
 (extend-protocol KvRfable
   #?(:clj Object :cljs default) (some-kvrf [_] nil)
-  nil (some-kvrf [_] nil))
+  #?@(:clj [nil (some-kvrf [_] nil)]))
 
 (defn ensure-kvrf [rf]
   (or (some-kvrf rf)
@@ -126,7 +126,8 @@
 
 (defn- into-rf [to]
   (cond
-    (instance? #?(:clj clojure.lang.IEditableCollection :cljs IEditableCollection) to)
+    #?(:clj (instance? clojure.lang.IEditableCollection to)
+        :cljs (satisfies? IEditableCollection to))
     (if (map? to)
       (kvrf
         ([] (transient to))
