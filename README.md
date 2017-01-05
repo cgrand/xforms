@@ -10,9 +10,9 @@ They generally only make sense in the context of a higher-order transducer.
 
  * regular ones: `partition` (1 arg), `reductions`, `for`, `window` and `window-by-time`
  * higher-order ones: `by-key`, `multiplex`, `transjuxt`, `partition` (2+ args)
- * 1-item ones: `reduce`, `into`, `last`, `count`, `avg`, `min`, `minimum`, `max`, `maximum`, `str`
+ * 1-item ones: `reduce`, `into`, `last`, `count`, `avg`, `sd`, `min`, `minimum`, `max`, `maximum`, `str`
  
-*Reducing functions* (in `net.cgrand.xforms.rfs`): `min`, `minimum`, `max`, `maximum`, `str`, `str!`, `avg`, `juxt` and `last`.
+*Reducing functions* (in `net.cgrand.xforms.rfs`): `min`, `minimum`, `max`, `maximum`, `str`, `str!`, `avg`, `sd`, `juxt` and `last`.
 
 Transducing contexts: `transjuxt` (for performing several transductions in a single pass), `into`, `count`.
 
@@ -21,7 +21,7 @@ Transducing contexts: `transjuxt` (for performing several transductions in a sin
 Add this dependency to your project:
 
 ```clj
-[net.cgrand/xforms "0.7.1"]
+[net.cgrand/xforms "0.8.0"]
 ```
 
 ```clj
