@@ -273,62 +273,68 @@
                       acc)))
                 ([acc k v] (self acc #?(:clj (clojure.lang.MapEntry. k v) :cljs [k v])))))))))))
 
-(defn partition
-  "Returns a partitioning transducer. Each partition is independently transformed using the xform transducer."
-  ([n]
-    (partition n n (into [])))
-  ([n step-or-xform]
-    (if (fn? step-or-xform)
-      (partition n n step-or-xform)
-      (partition n step-or-xform (into []))))
-  ([n step pad-or-xform]
-    (if (fn? pad-or-xform)
-      (let [xform pad-or-xform]
-        (fn [rf]
-          (let [mxrf (multiplexable rf)
-                dq #?(:clj (java.util.ArrayDeque. n) :cljs (Queue.))
-                barrier (volatile! n)
-                xform (comp (map #(if (identical? dq %) nil %)) xform)]
-            (fn
-              ([] (rf))
-              ([acc] (.clear dq) (rf acc))
-              ([acc x]
-                (let [b (vswap! barrier dec)]
-                  (when (< b n) (#?(:clj .add :cljs .enqueue) dq (if (nil? x) dq x)))
-                  (if (zero? b)
-                    ; this transduce may return a reduced because of mxrf wrapping reduceds coming from rf
-                    (let [acc (transduce xform mxrf acc #?(:clj dq :cljs (.getValues dq)))]
-                      (dotimes [_ (core/min n step)] (#?(:clj .poll :cljs .dequeue) dq))
-                      (vswap! barrier + step)
-                      acc)
-                    acc)))))))
-      (partition n step pad-or-xform (into []))))
-  ([n step pad xform]
-    (fn [rf]
-      (let [mxrf (multiplexable rf)
-            dq #?(:clj (java.util.ArrayDeque. n) :cljs (Queue.))
-            barrier (volatile! n)
-            xform (comp (map #(if (identical? dq %) nil %)) xform)]
-        (fn
-          ([] (rf))
-          ([acc] (if (< @barrier n)
-                   (let [xform (comp cat (take n) xform)
-                         ; don't use mxrf for completion: we want completion and don't want reduced-wrapping 
-                         acc (transduce xform rf acc [(.getValues dq) pad])]
-                     (vreset! @barrier n)
-                     (.clear dq)
-                     acc)
-                   acc))
-          ([acc x]
-            (let [b (vswap! barrier dec)]
-              (when (< b n) (#?(:clj .add :cljs .enqueue) dq (if (nil? x) dq x)))
-              (if (zero? b)
-                ; this transduce may return a reduced because of mxrf wrapping reduceds coming from rf
-                (let [acc (transduce xform mxrf acc #?(:clj dq :cljs (.getValues dq)))]
-                  (dotimes [_ (min n step)] (#?(:clj .poll :cljs .dequeue) dq))
-                  (vswap! barrier + step)
-                  acc)
-                acc))))))))
+(macros/replace
+  [#?(:cljs {(java.util.ArrayDeque. n) (Queue.)
+             .add .enqueue
+             .poll .dequeue})
+   #?(:clj {(.getValues dq) dq})]
+  
+  (defn partition
+    "Returns a partitioning transducer. Each partition is independently transformed using the xform transducer."
+    ([n]
+      (partition n n (into [])))
+    ([n step-or-xform]
+      (if (fn? step-or-xform)
+        (partition n n step-or-xform)
+        (partition n step-or-xform (into []))))
+    ([n step pad-or-xform]
+      (if (fn? pad-or-xform)
+        (let [xform pad-or-xform]
+          (fn [rf]
+            (let [mxrf (multiplexable rf)
+                  dq (java.util.ArrayDeque. n)
+                  barrier (volatile! n)
+                  xform (comp (map #(if (identical? dq %) nil %)) xform)]
+              (fn
+                ([] (rf))
+                ([acc] (.clear dq) (rf acc))
+                ([acc x]
+                  (let [b (vswap! barrier dec)]
+                    (when (< b n) (.add dq (if (nil? x) dq x)))
+                    (if (zero? b)
+                      ; this transduce may return a reduced because of mxrf wrapping reduceds coming from rf
+                      (let [acc (transduce xform mxrf acc (.getValues dq))]
+                        (dotimes [_ (core/min n step)] (.poll dq))
+                        (vswap! barrier + step)
+                        acc)
+                      acc)))))))
+        (partition n step pad-or-xform (into []))))
+    ([n step pad xform]
+      (fn [rf]
+        (let [mxrf (multiplexable rf)
+              dq (java.util.ArrayDeque. n)
+              barrier (volatile! n)
+              xform (comp (map #(if (identical? dq %) nil %)) xform)]
+          (fn
+            ([] (rf))
+            ([acc] (if (< @barrier n)
+                     (let [xform (comp cat (take n) xform)
+                           ; don't use mxrf for completion: we want completion and don't want reduced-wrapping 
+                           acc (transduce xform rf acc [(.getValues dq) pad])]
+                       (vreset! @barrier n)
+                       (.clear dq)
+                       acc)
+                     acc))
+            ([acc x]
+              (let [b (vswap! barrier dec)]
+                (when (< b n) (.add dq (if (nil? x) dq x)))
+                (if (zero? b)
+                  ; this transduce may return a reduced because of mxrf wrapping reduceds coming from rf
+                  (let [acc (transduce xform mxrf acc (.getValues dq))]
+                    (dotimes [_ (min n step)] (.poll dq))
+                    (vswap! barrier + step)
+                    acc)
+                  acc)))))))))
 
 (defn reductions
   "Transducer version of reductions. There's a difference in behavior when init is not provided: (f) is used.
