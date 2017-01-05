@@ -331,7 +331,7 @@
                 acc))))))))
 
 (defn reductions
-  "Transient version of reductions. There's a difference in behavior when init is not provided: (f) is used.
+  "Transducer version of reductions. There's a difference in behavior when init is not provided: (f) is used.
    So x/reductions works like x/reduce or transduce, not like reduce and reductions when no init and 1-item input."
   ([f] (reductions f (f)))
   ([f init]
