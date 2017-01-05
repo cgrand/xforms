@@ -361,6 +361,7 @@
                   (rf acc curr))))))))))
 
 (def avg (reduce rf/avg))
+(def sd (reduce rf/sd))
 
 (defn window
   "Returns a transducer which computes an accumulator over the last n items

@@ -58,8 +58,23 @@
   ([] (transient [0 0]))
   ([[n sum]] (/ sum n))
   ([acc x] (avg acc x 1))
-  ([[n sum :as acc] x w]
+  ([[n sum :as acc] x w] ; weighted mean
     (-> acc (assoc! 0 (+ n w)) (assoc! 1 (+ sum (* w x))))))
+
+(defn sd
+  "Reducing fn to compute the standard deviation. Returns 0 if no or only one item."
+  ([] #?(:clj (double-array 3) :cljs #js [0.0 0.0 0.0]))
+  ([^doubles a]
+    (let [s (aget a 0) s2 (aget a 1) n (aget a 2)]
+      (if (< 1 n)
+        (Math/sqrt (/ (- s2 (/ (* s s) n)) (dec n)))
+        0.0)))
+  ([^doubles a x]
+    (let [s (aget a 0) s2 (aget a 1) n (aget a 2)]
+      (doto a
+        (aset 0 (+ s x))
+        (aset 1 (+ s2 (* x x)))
+        (aset 2 (inc n))))))
 
 (defn last
   "Reducing function that returns the last value."
