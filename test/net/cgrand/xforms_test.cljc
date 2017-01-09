@@ -9,7 +9,7 @@
   n is the number of calls to rf before it returns a reduced.
   accs is a collection of successive return values for rf."
   ([xform n coll]
-    (trial xform n (repeatedly #(#?(:clj Object. :clj js/Object.))) coll))
+    (trial xform n (repeatedly #(#?(:clj Object. :cljs js/Object.))) coll))
   ([xform n accs coll]
     (let [vaccs (volatile! accs)
           vstate (volatile! {:n n :acc (first @vaccs) :state :init})
