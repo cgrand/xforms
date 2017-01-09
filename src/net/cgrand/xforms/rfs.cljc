@@ -65,16 +65,19 @@
   "Reducing fn to compute the standard deviation. Returns 0 if no or only one item."
   ([] #?(:clj (double-array 3) :cljs #js [0.0 0.0 0.0]))
   ([^doubles a]
-    (let [s (aget a 0) s2 (aget a 1) n (aget a 2)]
+    (let [s (aget a 0) n (aget a 2)]
       (if (< 1 n)
-        (Math/sqrt (/ (- s2 (/ (* s s) n)) (dec n)))
+        (Math/sqrt (/ s (dec n)))
         0.0)))
   ([^doubles a x]
-    (let [s (aget a 0) s2 (aget a 1) n (aget a 2)]
+    (let [s (aget a 0) m (aget a 1) n (aget a 2)
+          d (- x m)
+          n (inc n)
+          m' (+ m (/ d n))]
       (doto a
-        (aset 0 (+ s x))
-        (aset 1 (+ s2 (* x x)))
-        (aset 2 (inc n))))))
+        (aset 0 (+ s (* d (- x m'))))
+        (aset 1 m')
+        (aset 2 n)))))
 
 (defn last
   "Reducing function that returns the last value."
