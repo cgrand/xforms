@@ -21,7 +21,7 @@ Transducing contexts: `transjuxt` (for performing several transductions in a sin
 Add this dependency to your project:
 
 ```clj
-[net.cgrand/xforms "0.8.1"]
+[net.cgrand/xforms "0.8.2"]
 ```
 
 ```clj
