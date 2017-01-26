@@ -82,6 +82,12 @@
   (is (= (into [] (comp (take 3) (x/reductions +)) (range)) [0 0 1 3]))
   (is (= (into [] (x/reductions (constantly (reduced 42)) 0) (range)) [0 42])))
 
+(deftest partition
+  (is (= (into [] (x/partition 2 1 nil (x/into [])) (range 8))
+        [[0 1] [1 2] [2 3] [3 4] [4 5] [5 6] [6 7] [7]]))
+  (is (= (into [] (x/partition 2 1 (x/into [])) (range 8))
+        [[0 1] [1 2] [2 3] [3 4] [4 5] [5 6] [6 7]])))
+
 #?(:clj
     (deftest window-by-time
       (is (= (into 

@@ -321,7 +321,7 @@
                      (let [xform (comp cat (take n) xform)
                            ; don't use mxrf for completion: we want completion and don't want reduced-wrapping 
                            acc (transduce xform rf acc [(.getValues dq) pad])]
-                       (vreset! @barrier n)
+                       (vreset! barrier n)
                        (.clear dq)
                        acc)
                      acc))
@@ -330,8 +330,8 @@
                 (when (< b n) (.add dq (if (nil? x) dq x)))
                 (if (zero? b)
                   ; this transduce may return a reduced because of mxrf wrapping reduceds coming from rf
-                  (let [acc (transduce xform mxrf acc (.getValues dq))]
-                    (dotimes [_ (min n step)] (.poll dq))
+                  (let [acc (core/transduce xform mxrf acc (.getValues dq))]
+                    (dotimes [_ (core/min n step)] (.poll dq))
                     (vswap! barrier + step)
                     acc)
                   acc)))))))))

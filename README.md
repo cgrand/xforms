@@ -21,7 +21,7 @@ Transducing contexts: `transjuxt` (for performing several transductions in a sin
 Add this dependency to your project:
 
 ```clj
-[net.cgrand/xforms "0.8.2"]
+[net.cgrand/xforms "0.8.3"]
 ```
 
 ```clj
@@ -127,16 +127,16 @@ It's worth noting that all transformed outputs are subsequently interleaved. See
 
 ```clj
 => (sequence (x/partition 2 1 identity) (range 8))
-(0 1 1 2 2 3 3 4 4 5 5 6 6 7 7)
+(0 1 1 2 2 3 3 4 4 5 5 6 6 7)
 => (sequence (x/by-key odd? identity) (range 8))
 ([false 0] [true 1] [false 2] [true 3] [false 4] [true 5] [false 6] [true 7])
 ```
 
-That's why most of the time the last stage of the sub-transducer will be a `x/reduce` or a `x/into`:
+That's why most of the time the last stage of the sub-transducer will be a 1-item transducer like `x/reduce` or `x/into`:
 
 ```clj
 => (sequence (x/partition 2 1 (x/into [])) (range 8))
-([0 1] [1 2] [2 3] [3 4] [4 5] [5 6] [6 7] [7])
+([0 1] [1 2] [2 3] [3 4] [4 5] [5 6] [6 7])
 => (sequence (x/by-key odd? (x/into [])) (range 8))
 ([false [0 2 4 6]] [true [1 3 5 7]])
 ```
