@@ -5,7 +5,7 @@
              [net.cgrand.macrovich :as macros]
              [net.cgrand.xforms :refer [for kvrf let-complete]])
       :clj (:require [net.cgrand.macrovich :as macros]))
-  (:refer-clojure :exclude [reduce reductions into count for partition str last keys vals min max])
+  (:refer-clojure :exclude [reduce reductions into count for partition str last keys vals min max drop-last take-last])
   (:require [#?(:clj clojure.core :cljs cljs.core) :as core]
     [net.cgrand.xforms.rfs :as rf])
   #?(:cljs (:import [goog.structs Queue])))
@@ -276,7 +276,8 @@
 (macros/replace
   [#?(:cljs {(java.util.ArrayDeque. n) (Queue.)
              .add .enqueue
-             .poll .dequeue})
+             .poll .dequeue
+             .size .getCount})
    #?(:clj {(.getValues dq) dq})]
   
   (defn partition
@@ -334,7 +335,35 @@
                     (dotimes [_ (core/min n step)] (.poll dq))
                     (vswap! barrier + step)
                     acc)
-                  acc)))))))))
+                  acc))))))))
+  
+  (defn take-last [n]
+    (fn [rf]
+      (let [dq (java.util.ArrayDeque. n)]
+        (fn
+          ([] (rf))
+          ([acc] (transduce (map #(if (identical? dq %) nil %)) rf acc (.getValues dq)))
+          ([acc x]
+            (.add dq (if (nil? x) dq x))
+            (when (< n (.size dq)) (.poll dq))
+            acc)))))
+  
+  (defn drop-last 
+    ([] (drop-last 1))
+    ([n]
+      (fn [rf]
+        (let [dq (java.util.ArrayDeque. n)
+              xform (map #(if (identical? dq %) nil %))
+              rf (xform rf)]
+          (fn
+            ([] (rf))
+            ([acc] (rf acc))
+            ([acc x]
+              (.add dq (if (nil? x) dq x))
+              (if (< n (.size dq)) 
+                (rf acc (.poll dq))
+                acc)))))))
+  )
 
 (defn reductions
   "Transducer version of reductions. There's a difference in behavior when init is not provided: (f) is used.

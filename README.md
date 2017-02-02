@@ -8,7 +8,7 @@ More transducers and reducing functions for Clojure(script)!
 (which accept other transducers as arguments) and 1-item ones which emit only 1 item out no matter how many went in.
 They generally only make sense in the context of a higher-order transducer. 
 
- * regular ones: `partition` (1 arg), `reductions`, `for`, `window` and `window-by-time`
+ * regular ones: `partition` (1 arg), `reductions`, `for`, `take-last`, `drop-last`, `window` and `window-by-time`
  * higher-order ones: `by-key`, `multiplex`, `transjuxt`, `partition` (2+ args)
  * 1-item ones: `reduce`, `into`, `transjuxt`, `last`, `count`, `avg`, `sd`, `min`, `minimum`, `max`, `maximum`, `str`
  
@@ -21,7 +21,7 @@ Transducing contexts: `transjuxt` (for performing several transductions in a sin
 Add this dependency to your project:
 
 ```clj
-[net.cgrand/xforms "0.8.3"]
+[net.cgrand/xforms "0.9.0"]
 ```
 
 ```clj
