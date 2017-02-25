@@ -178,6 +178,8 @@
 
 (def max (reduce rf/max))
 
+(def str (reduce rf/str))
+
 (defn vals [rf]
   (kvrf
     ([] (rf))
