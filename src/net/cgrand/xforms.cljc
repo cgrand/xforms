@@ -12,6 +12,9 @@
 
 (macros/deftime
 
+(defn- no-user-meta? [x]
+  (= {} (dissoc (or (meta x) {}) :file :line :column :end-line :end-column)))
+  
 (defmacro for
  "Like clojure.core/for with the first expression being replaced by % (or _). Returns a transducer.
    When the first expression is not % (or _) returns an eduction."
@@ -40,7 +43,7 @@
        nested-reduceds (core/for [[expr binding] rpairs
                                  :when (not (keyword? binding))] 
                          `reduced)
-       body (build `(let [acc# (~rf ~acc ~@(if (and (pair? body-expr) (nil? (meta body-expr)))
+       body (build `(let [acc# (~rf ~acc ~@(if (and (pair? body-expr) (no-user-meta? body-expr))
                                              body-expr
                                              [body-expr]))]
                       (if (reduced? acc#)
