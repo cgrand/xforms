@@ -330,7 +330,7 @@
                        (vreset! barrier n)
                        (.clear dq)
                        acc)
-                     acc))
+                     (rf acc)))
             ([acc x]
               (let [b (vswap! barrier dec)]
                 (when (< b n) (.add dq (if (nil? x) dq x)))
