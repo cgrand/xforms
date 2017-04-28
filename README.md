@@ -6,7 +6,7 @@ More transducers and reducing functions for Clojure(script)!
 
 *Transducers* (in `net.cgrand.xforms`) can be classified in three groups: regular ones, higher-order ones
 (which accept other transducers as arguments) and 1-item ones which emit only 1 item out no matter how many went in.
-They generally only make sense in the context of a higher-order transducer. 
+1-item transducers generally only make sense in the context of a higher-order transducer. 
 
  * regular ones: `partition` (1 arg), `reductions`, `for`, `take-last`, `drop-last`, `window` and `window-by-time`
  * higher-order ones: `by-key`, `multiplex`, `transjuxt`, `partition` (2+ args)
