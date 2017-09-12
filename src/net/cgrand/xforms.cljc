@@ -278,6 +278,11 @@
                       acc)))
                 ([acc k v] (self acc #?(:clj (clojure.lang.MapEntry. k v) :cljs [k v])))))))))))
 
+(defn into-by-key
+  "A shorthand for the common case (comp (x/by-key ...) (x/into {}))."
+  [coll & by-key-args]
+  (comp (apply by-key by-key-args) (into coll)))
+
 (macros/replace
   [#?(:cljs {(java.util.ArrayDeque. n) (Queue.)
              .add .enqueue
