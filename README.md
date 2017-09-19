@@ -21,7 +21,7 @@ Transducing contexts: `transjuxt` (for performing several transductions in a sin
 Add this dependency to your project:
 
 ```clj
-[net.cgrand/xforms "0.9.4"]
+[net.cgrand /xforms "0.9.5"]
 ```
 
 ```clj
@@ -208,6 +208,16 @@ Evaluation count : 24 in 6 samples of 4 calls.
 ```
 
 ## Changelog
+
+### 0.9.5
+
+ * Short (up to 4) literal collections (or literal collections with `:unroll` metadata) in collection positions in `x/for` are unrolled.
+   This means that the collection is not allocated.
+   If it's a collection of pairs (e.g. maps), pairs themselves won't be allocated.
+
+### 0.9.4
+
+ * Add `x/into-by-key` short hand
 
 ### 0.7.2
 

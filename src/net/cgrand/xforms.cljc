@@ -14,7 +14,17 @@
 
 (defn- no-user-meta? [x]
   (= {} (dissoc (or (meta x) {}) :file :line :column :end-line :end-column)))
-  
+
+(defmacro unreduced->
+  "Thread first while threaded value is not reduced.
+   Doesn't unreduce the final value."
+  ([x] x)
+  ([x expr & exprs]
+  `(let [x# ~x]
+     (if (reduced? x#)
+       x#
+       (unreduced-> (-> x# ~expr) ~@exprs)))))
+
 (defmacro for
  "Like clojure.core/for with the first expression being replaced by % (or _). Returns a transducer.
    When the first expression is not % (or _) returns an eduction."
@@ -22,43 +32,53 @@
  (if-not (and (symbol? %or_) (#{"%" "_"} (name %or_)))
    `(eduction (for [~binding ~'% ~@seq-exprs] ~body-expr) ~%or_)
    (let [rf (gensym 'rf)
-       acc (gensym 'acc)
-       pair? #(and (vector? %) (= 2 (core/count %)))
-       destructuring-pair? (every-pred pair?
-                             #(not-any? (some-fn keyword? #{'&}) %))
-       rpairs (core/partition 2 (rseq (vec seq-exprs)))
-       build (fn [init]
-               (core/reduce (fn [body [expr binding]]
-                     (case binding
-                       :let `(let ~expr ~body)
-                       :when `(if ~expr ~body ~acc)
-                       :while `(if ~expr ~body (reduced ~acc))
-                       (if (destructuring-pair? binding)
-                         `(let [expr# ~expr]
-                            (if (and (map? expr#) (kvreducible? expr#))
-                              (core/reduce-kv (fn [~acc ~@binding] ~body) ~acc expr#)
-                              (core/reduce (fn [~acc ~binding] ~body) ~acc expr#)))
-                         `(core/reduce (fn [~acc ~binding] ~body) ~acc ~expr))))
-                 init rpairs))
-       nested-reduceds (core/for [[expr binding] rpairs
-                                 :when (not (keyword? binding))] 
-                         `reduced)
-       body (build `(let [acc# (~rf ~acc ~@(if (and (pair? body-expr) (no-user-meta? body-expr))
-                                             body-expr
-                                             [body-expr]))]
-                      (if (reduced? acc#)
-                        (-> acc# ~@nested-reduceds)
-                        acc#)))]
-   `(fn [~rf]
-      (let [~rf (ensure-kvrf ~rf)]
-        (kvrf
-          ([] (~rf))
-          ([~acc] (~rf ~acc))
-          ([~acc ~binding] ~body)
-          ~(if (destructuring-pair? binding)
-             `([~acc ~@binding] ~body)
-             `([~acc k# v#]
-                (let [~binding (net.cgrand.macrovich/case :clj (clojure.lang.MapEntry. k# v#) :cljs [k# v#])] ~body)))))))))
+         acc (gensym 'acc)
+         pair? #(and (vector? %) (= 2 (core/count %)))
+         destructuring-pair? (every-pred pair?
+                               #(not-any? (some-fn keyword? #{'&}) %))
+         rpairs (core/partition 2 (rseq (vec seq-exprs)))
+         build (fn [init]
+                 (core/reduce (fn [body [expr binding]]
+                                (case binding
+                                  :let `(let ~expr ~body)
+                                  :when `(if ~expr ~body ~acc)
+                                  :while `(if ~expr ~body (reduced ~acc))
+                                  (if (and (coll? expr) (not (seq? expr))
+                                        (or (<= (core/count expr) 4) (:unroll (meta expr))))
+                                    (let [body-rf (gensym 'body-rf)]
+                                      (if (and (destructuring-pair? binding) (every? vector? expr))
+                                        `(let [~body-rf (fn [~acc ~@binding] ~body)]
+                                           (unreduced (unreduced-> ~acc 
+                                                        ~@(map (fn [[k v]] `(~body-rf ~k ~v)) expr))))
+                                        `(let [~body-rf (fn [~acc ~binding] ~body)]
+                                           (unreduced (unreduced-> ~acc 
+                                                        ~@(map (fn [v] `(~body-rf ~v)) expr))))))
+                                    (if (destructuring-pair? binding)
+                                      `(let [expr# ~expr]
+                                         (if (and (map? expr#) (kvreducible? expr#))
+                                           (core/reduce-kv (fn [~acc ~@binding] ~body) ~acc expr#)
+                                           (core/reduce (fn [~acc ~binding] ~body) ~acc expr#)))
+                                      `(core/reduce (fn [~acc ~binding] ~body) ~acc ~expr)))))
+                   init rpairs))
+         nested-reduceds (core/for [[expr binding] rpairs
+                                    :when (not (keyword? binding))] 
+                           `reduced)
+         body (build `(let [acc# (~rf ~acc ~@(if (and (pair? body-expr) (no-user-meta? body-expr))
+                                               body-expr
+                                               [body-expr]))]
+                        (if (reduced? acc#)
+                          (-> acc# ~@nested-reduceds)
+                          acc#)))]
+     `(fn [~rf]
+        (let [~rf (ensure-kvrf ~rf)]
+          (kvrf
+            ([] (~rf))
+            ([~acc] (~rf ~acc))
+            ([~acc ~binding] ~body)
+            ~(if (destructuring-pair? binding)
+               `([~acc ~@binding] ~body)
+               `([~acc k# v#]
+                  (let [~binding (net.cgrand.macrovich/case :clj (clojure.lang.MapEntry. k# v#) :cljs [k# v#])] ~body)))))))))
 
 (defmacro kvrf [name? & fn-bodies]
   (let [name (if (symbol? name?) name? (gensym '_))
