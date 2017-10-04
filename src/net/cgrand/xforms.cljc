@@ -5,7 +5,7 @@
              [net.cgrand.macrovich :as macros]
              [net.cgrand.xforms :refer [for kvrf let-complete]])
       :clj (:require [net.cgrand.macrovich :as macros]))
-  (:refer-clojure :exclude [reduce reductions into count for partition str last keys vals min max drop-last take-last])
+  (:refer-clojure :exclude [some reduce reductions into count for partition str last keys vals min max drop-last take-last])
   (:require [#?(:clj clojure.core :cljs cljs.core) :as core]
     [net.cgrand.xforms.rfs :as rf])
   #?(:cljs (:import [goog.structs Queue])))
@@ -367,6 +367,10 @@
                     acc)
                   acc))))))))
   
+  #_(defn zip [xform1 xform2]
+     (fn [rf]
+       (let )))
+  
   (defn take-last [n]
     (fn [rf]
       (let [dq (java.util.ArrayDeque. n)]
@@ -460,7 +464,8 @@
 
 #?(:clj
     (defn window-by-time
-      "Returns a transducer which computes a windowed accumulator over chronologically sorted items.
+      "ALPHA
+   Returns a transducer which computes a windowed accumulator over chronologically sorted items.
    
    timef is a function from one item to its scaled timestamp (as a double). The window length is always 1.0
    so timef must normalize timestamps. For example if timestamps are in seconds (and under the :ts key),
@@ -589,6 +594,11 @@
 
 (def last (reduce rf/last))
 
+(defn some
+  "Process coll through the specified xform and returns the first local true value."
+  [xform coll]
+  (transduce xform rf/some nil coll))
+
 (defn transjuxt
   "Performs several transductions over coll at once. xforms-map can be a map or a sequential collection.
    When xforms-map is a map, returns a map with the same keyset as xforms-map.
@@ -609,4 +619,25 @@
   ([xforms-map coll]
     (transduce (transjuxt xforms-map) rf/last coll)))
 
+#_(defn rollup
+   "Roll-up input data along the provided dimensions (which are functions of one input item),
+   Values of interest are extracted from items using the valfn function and are then summarized
+   by summary-fn (a reducing function over values returned by valfn or summaries).
+   Each level of rollup is a map with two keys: :summary and :details."
+   ([dimensions valfn summary-fn]
+     (let [[dim & dims] (reverse dimensions)]
+       (core/reduce
+         (fn [xform dim]
+           (comp
+             (by-key dim xform)
+             (transjuxt
+               {:detail (into {})
+                :summary (comp vals (map :summary) (reduce summary-fn))})))
+         (comp (by-key dim (map valfn))
+           (transjuxt
+             {:detail (into {})
+              :summary (comp vals (reduce summary-fn))}))
+         dims)))
+   ([dimensions valfn summary-fn coll]
+     (into {} (rollup dimensions valfn summary-fn) coll)))
 )

@@ -1,6 +1,6 @@
 (ns net.cgrand.xforms.rfs
   {:author "Christophe Grand"}
-  (:refer-clojure :exclude [str last min max])
+  (:refer-clojure :exclude [str last min max some])
   #?(:cljs (:require-macros
              [net.cgrand.macrovich :as macros]
              [net.cgrand.xforms.rfs :refer [or-instance?]])
@@ -84,6 +84,12 @@
   ([] nil)
   ([x] x)
   ([_ x] x))
+
+(defn some
+  "Reducing function that returns the first logical true value."
+  ([] nil)
+  ([x] x)
+  ([_ x] (when x (reduced x))))
 
 (defn str!
   "Like xforms/str but returns a StringBuilder."
