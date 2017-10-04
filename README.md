@@ -26,7 +26,7 @@ More transducers and reducing functions for Clojure(script)!
 Add this dependency to your project:
 
 ```clj
-[net.cgrand /xforms "0.10.0"]
+[net.cgrand /xforms "0.10.1"]
 ```
 
 ```clj

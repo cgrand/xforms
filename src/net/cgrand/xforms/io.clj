@@ -43,8 +43,11 @@
 
 (defn edn-in
   "Returns a reducible view over the provided input.
-   Input is read line by line. Coercion of the input is done by io/reader (and opts are passed to it).
-   Input is automatically closed upon completion or error."
+   Input is read form by form. Coercion of the input is done by io/reader.
+   Input is automatically closed upon completion or error.
+   Unqualified options are passed to both edn/read and io/writer, options qualified by clojure.java.io
+   are only passed (once dequalified) to io/writer, options qualified by clojure.edn are only passed to
+   edn/read"
   [in & {:as opts}]
   (let [no-init (Object.)]
     (reify clojure.lang.IReduce 
@@ -79,5 +82,5 @@
               *print-dup* false
               *print-meta* false
               *print-readably* true]
-      (println x)
+      (prn x)
       w)))
