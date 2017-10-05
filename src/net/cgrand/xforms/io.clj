@@ -33,13 +33,18 @@
                 state))))))))
 
 (defn lines-out
-  "Reducing function that writes values serialized to its accumulator (a java.io.Writer).
+  "1-2 args: reducing function that writes values serialized to its accumulator (a java.io.Writer).
+   3+ args: transducing context that writes transformed values to the specified output. The output is
+   coerced to a Writer by passing out and opts to clojure.java.io/writer. The output is automatically closed.
    Returns the writer."
   ([w] w)
   ([^java.io.Writer w line]
     (doto w
       (.write (str line))
-      (.newLine))))
+      (.newLine)))
+  ([out xform coll & opts]
+    (with-open [w (apply io/writer out opts)]
+      (transduce xform lines-out w coll))))
 
 (defn edn-in
   "Returns a reducible view over the provided input.
@@ -72,7 +77,9 @@
                      (recur state))))))))))))
 
 (defn edn-out
-  "Reducing function that writes values serialized as EDN to its accumulator (a java.io.Writer).
+  "1-2 args: reducing function that writes values serialized as EDN to its accumulator (a java.io.Writer).
+   3+ args: transducing context that writes transformed values to the specified output. The output is
+   coerced to a Writer by passing out and opts to clojure.java.io/writer. The output is automatically closed.
    Returns the writer."
   ([w] w)
   ([^java.io.Writer w x]
@@ -83,4 +90,7 @@
               *print-meta* false
               *print-readably* true]
       (prn x)
-      w)))
+      w))
+  ([out xform coll & opts]
+    (with-open [w (apply io/writer out opts)]
+      (transduce xform edn-out w coll))))

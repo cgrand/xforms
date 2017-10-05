@@ -17,7 +17,10 @@ More transducers and reducing functions for Clojure(script)!
  * in `net.cgrand.xforms.rfs`: `min`, `minimum`, `max`, `maximum`, `str`, `str!`, `avg`, `sd`, `last` and `some`.
  * in `net.cgrand.xforms.io`: `line-out` and `edn-out`.
 
-*Transducing contexts*: `transjuxt` (for performing several transductions in a single pass), `into`, `count` and `some`.
+*Transducing contexts*:
+
+ * in `net.cgrand.xforms`: `transjuxt` (for performing several transductions in a single pass), `into`, `count` and `some`.
+ * in `net.cgrand.xforms.io`: `line-out` (3+ args) and `edn-out` (3+ args).
 
 *Reducible views* (in `net.cgrand.xforms.io`): `lines-in` and `edn-in`.
 
@@ -26,7 +29,7 @@ More transducers and reducing functions for Clojure(script)!
 Add this dependency to your project:
 
 ```clj
-[net.cgrand /xforms "0.10.1"]
+[net.cgrand /xforms "0.10.2"]
 ```
 
 ```clj
