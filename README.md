@@ -4,18 +4,26 @@ More transducers and reducing functions for Clojure(script)!
 
 [![Build Status](https://travis-ci.org/cgrand/xforms.png?branch=master)](https://travis-ci.org/cgrand/xforms)
 
-*Transducers* (in `net.cgrand.xforms`) can be classified in three groups: regular ones, higher-order ones
+*Transducers* can be classified in three groups: regular ones, higher-order ones
 (which accept other transducers as arguments) and 1-item ones which emit only 1 item out no matter how many went in.
 1-item transducers generally only make sense in the context of a higher-order transducer. 
+
+In `net.cgrand.xforms`:
 
  * regular ones: `partition` (1 arg), `reductions`, `for`, `take-last`, `drop-last`, `window` and `window-by-time`
  * higher-order ones: `by-key`, `into-by-key`, `multiplex`, `transjuxt`, `partition` (2+ args)
  * 1-item ones: `reduce`, `into`, `transjuxt`, `last`, `count`, `avg`, `sd`, `min`, `minimum`, `max`, `maximum`, `str`
+
+In `net.cgrand.xforms.io`:
+ * `sh` to use any process as a transducer
+
  
 *Reducing functions*
 
  * in `net.cgrand.xforms.rfs`: `min`, `minimum`, `max`, `maximum`, `str`, `str!`, `avg`, `sd`, `last` and `some`.
  * in `net.cgrand.xforms.io`: `line-out` and `edn-out`.
+
+(in `net.cgrand.xforms`)
 
 *Transducing contexts*:
 
@@ -29,7 +37,7 @@ More transducers and reducing functions for Clojure(script)!
 Add this dependency to your project:
 
 ```clj
-[net.cgrand /xforms "0.10.2"]
+[net.cgrand /xforms "0.11.0"]
 ```
 
 ```clj
