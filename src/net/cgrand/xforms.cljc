@@ -469,6 +469,31 @@
                 (rf acc (f (vreset! vwacc (f (invf wacc x') x))))))))))))
 
 #?(:clj
+    (defn iterator
+      "Iterator transducing context, returns an iterator on the transformed data.
+       Equivalent to (.iterator (eduction xform (iterator-seq src-iterator))) except there's is no buffering on values (as in iterator-seq),
+       This buffering may cause problems when mutable objects are returned by the src-iterator."
+      [xform ^java.util.Iterator src-iterator]
+      (let [NULL (Object.)
+            dq (java.util.ArrayDeque. 32)
+            rf (xform (fn ([acc] acc) ([acc x] (.push dq (if (some? x) x NULL)) acc)))
+            vopen (volatile! true)
+            ensure-next #(or (some? (.peek dq))
+                           (if (and @vopen (.hasNext src-iterator))
+                             (let [acc (rf nil (.next src-iterator))]
+                               (when (reduced? acc) (vreset! vopen false))
+                               (recur))
+                             false))]
+        (reify java.util.Iterator
+          (hasNext [_]
+            (ensure-next))
+          (next [_]
+            (if (ensure-next)
+              (let [x (.poll dq)]
+                (if (identical? NULL x) nil x))
+              (throw (java.util.NoSuchElementException.))))))))
+
+#?(:clj
     (defn window-by-time
       "ALPHA
    Returns a transducer which computes a windowed accumulator over chronologically sorted items.
