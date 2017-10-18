@@ -25,6 +25,10 @@
        x#
        (unreduced-> (-> x# ~expr) ~@exprs)))))
 
+(defn- pair? [x] (and (vector? x) (= 2 (core/count x))))
+(defn- destructuring-pair? [x]
+  (and (pair? x) (not (or (keyword? x) (= '& x)))))
+
 (defmacro for
  "Like clojure.core/for with the first expression being replaced by % (or _). Returns a transducer.
    When the first expression is not % (or _) returns an eduction."
@@ -33,9 +37,6 @@
    `(eduction (for [~binding ~'% ~@seq-exprs] ~body-expr) ~%or_)
    (let [rf (gensym 'rf)
          acc (gensym 'acc)
-         pair? #(and (vector? %) (= 2 (core/count %)))
-         destructuring-pair? (every-pred pair?
-                               #(not-any? (some-fn keyword? #{'&}) %))
          rpairs (core/partition 2 (rseq (vec seq-exprs)))
          build (fn [init]
                  (core/reduce (fn [body [expr binding]]
@@ -74,16 +75,27 @@
           (kvrf
             ([] (~rf))
             ([~acc] (~rf ~acc))
-            ([~acc ~binding] ~body)
-            ~(if (destructuring-pair? binding)
-               `([~acc ~@binding] ~body)
-               `([~acc k# v#]
-                  (let [~binding (net.cgrand.macrovich/case :clj (clojure.lang.MapEntry. k# v#) :cljs [k# v#])] ~body)))))))))
+            ([~acc ~binding] ~body)))))))
+
+(defn- arity [[arglist & body :as fn-body]]
+  (let [[fixargs varargs] (split-with (complement #{'&}) arglist)]
+    (if (seq varargs) (zipmap (range (core/count fixargs) 4) (repeat fn-body)))
+    {(core/count fixargs) fn-body}))
 
 (defmacro kvrf [name? & fn-bodies]
   (let [name (if (symbol? name?) name? (gensym '_))
         fn-bodies (if (symbol? name?) fn-bodies (cons name? fn-bodies))
-        fn-bodies (if (vector? (first fn-bodies)) (list fn-bodies) fn-bodies)]
+        fn-bodies (if (vector? (first fn-bodies)) (list fn-bodies) fn-bodies)
+        arities (core/into {} (mapcat arity) fn-bodies)
+        _ (when-not (core/some arities [2 3]) (throw (ex-info "Either arity 2 or 3 should be defined in kvrf." {:form &form})))
+        fn-bodies (cond-> fn-bodies
+                    (not (arities 3)) (conj (let [[[acc arg] & body] (arities 2)]
+                                              (if (destructuring-pair? arg)
+                                                (let [[karg varg] arg]
+                                                  `([~acc ~karg ~varg] ~@body))
+                                                `([~acc k# v#] (let [~arg (macros/case :clj (clojure.lang.MapEntry. k# v#) :cljs [k# v#])] ~@body)))))
+                    (not (arities 2)) (conj (let [[[acc karg varg] & body] (arities 3)]
+                                              `([~acc [~karg ~varg]] ~@body))))]
     `(reify
        ~@(macros/case :clj '[clojure.lang.Fn])
        KvRfable
@@ -93,7 +105,7 @@
            (let [nohint-args (map (fn [arg] (if (:tag (meta arg)) (gensym 'arg) arg)) args)
                  rebind (mapcat (fn [arg nohint]
                                   (when-not (= arg nohint) [arg nohint])) args nohint-args)]
-             `(~(macros/case :cljs `core/-invoke :clj 'invoke) [~name ~@nohint-args] (let [~@rebind] ~@body)))))))
+             `(~(macros/case :cljs `core/-invoke :clj 'invoke) [~name ~@nohint-args] ~@(if (seq rebind) [`(let [~@rebind] ~@body)] body)))))))
 
 (defmacro ^:private let-complete [[binding volatile] & body]
   `(let [v# @~volatile]
@@ -122,8 +134,7 @@
     (kvrf
       ([] (rf))
       ([acc] (rf acc))
-      ([acc x] (rf acc x))
-      ([acc k v] (rf acc #?(:clj (clojure.lang.MapEntry. k v) :cljs [k v]))))))
+      ([acc x] (rf acc x)))))
 
 (defn reduce
   "A transducer that reduces a collection to a 1-item collection consisting of only the reduced result.
@@ -207,14 +218,12 @@
   (kvrf
     ([] (rf))
     ([acc] (rf acc))
-    ([acc kv] (rf acc (val kv)))
     ([acc k v] (rf acc v))))
 
 (defn keys [rf]
   (kvrf
     ([] (rf))
     ([acc] (rf acc))
-    ([acc kv] (rf acc (key kv)))
     ([acc k v] (rf acc k))))
 
 ;; for both map entries and vectors 
@@ -264,8 +273,6 @@
             (kvrf self
               ([] (rf))
               ([acc] (let-complete [m m] (rf (core/reduce (fn [acc krf] (krf acc)) acc (core/vals (persistent! m))))))
-              ([acc x]
-                (self acc (key' x) (val' x)))
               ([acc k v]
                 (let [krf (or (get @m k) (doto (xform (make-rf k)) (->> (vswap! m assoc! k))))
                       acc (krf acc v)]
@@ -295,8 +302,7 @@
                         (do
                           (vswap! m assoc! k nop-rf)
                           (krf @acc)))
-                      acc)))
-                ([acc k v] (self acc #?(:clj (clojure.lang.MapEntry. k v) :cljs [k v])))))))))))
+                      acc)))))))))))
 
 (defn into-by-key
   "A shorthand for the common case (comp (x/by-key ...) (x/into {}))."

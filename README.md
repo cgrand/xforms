@@ -27,7 +27,7 @@ In `net.cgrand.xforms.io`:
 
 *Transducing contexts*:
 
- * in `net.cgrand.xforms`: `transjuxt` (for performing several transductions in a single pass), `into`, `count` and `some`.
+ * in `net.cgrand.xforms`: `transjuxt` (for performing several transductions in a single pass), `iterator` (clojure only), `into`, `count` and `some`.
  * in `net.cgrand.xforms.io`: `line-out` (3+ args) and `edn-out` (3+ args).
 
 *Reducible views* (in `net.cgrand.xforms.io`): `lines-in` and `edn-in`.
@@ -37,7 +37,7 @@ In `net.cgrand.xforms.io`:
 Add this dependency to your project:
 
 ```clj
-[net.cgrand /xforms "0.11.0"]
+[net.cgrand /xforms "0.12.0"]
 ```
 
 ```clj
