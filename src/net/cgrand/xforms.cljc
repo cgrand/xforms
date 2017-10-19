@@ -483,7 +483,9 @@
                              (let [acc (rf nil (.next src-iterator))]
                                (when (reduced? acc) (vreset! vopen false))
                                (recur))
-                             false))]
+                             (do
+                               (rf nil)
+                               false)))]
         (reify java.util.Iterator
           (hasNext [_]
             (ensure-next))

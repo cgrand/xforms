@@ -91,6 +91,9 @@
         [[[0 1] [2 3] [4 5] [6 7]]])))
 
 #?(:clj
+    (deftest iterator
+      (is (= [[0 1] [1 2] [2 3] [3 4] [4]] (iterator-seq (x/iterator (x/partition 2 1 nil) (.iterator (range 5)))))))
+    
     (deftest window-by-time
       (is (= (into 
                []
