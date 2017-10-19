@@ -479,13 +479,17 @@
             rf (xform (fn ([acc] acc) ([acc x] (.push dq (if (some? x) x NULL)) acc)))
             vopen (volatile! true)
             ensure-next #(or (some? (.peek dq))
-                           (if (and @vopen (.hasNext src-iterator))
-                             (let [acc (rf nil (.next src-iterator))]
-                               (when (reduced? acc) (vreset! vopen false))
-                               (recur))
-                             (do
-                               (rf nil)
-                               false)))]
+                           (and @vopen
+                             (if (.hasNext src-iterator)
+                               (let [acc (rf nil (.next src-iterator))]
+                                 (when (reduced? acc) 
+                                   (rf nil)
+                                   (vreset! vopen false))
+                                 (recur))
+                               (do 
+                                 (rf nil)
+                                 (vreset! vopen false)
+                                 (recur)))))]
         (reify java.util.Iterator
           (hasNext [_]
             (ensure-next))
