@@ -305,7 +305,7 @@
                       acc)))))))))))
 
 (defn into-by-key
-  "A shorthand for the common case (comp (x/by-key ...) (x/into {}))."
+  "A shorthand for the common case (comp (x/by-key ...) (x/into coll))."
   [coll & by-key-args]
   (comp (apply by-key by-key-args) (into coll)))
 
