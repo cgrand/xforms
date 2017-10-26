@@ -196,6 +196,42 @@
         (rf (core/reduce-kv rf (rf) from))
         (rf (core/reduce rf (rf) from))))))
 
+(defn- without-rf [from]
+  (cond
+    #?(:clj (instance? clojure.lang.IEditableCollection from)
+        :cljs (satisfies? IEditableCollection from))
+    (if (map? from)
+      (fn
+        ([] (transient from))
+        ([acc] (persistent! acc))
+        ([acc x] (dissoc! acc x)))
+      (fn
+        ([] (transient from))
+        ([acc] (persistent! acc))
+        ([acc x] (disj! acc x))))
+    (map? from)
+    (fn
+      ([] from)
+      ([acc] acc)
+      ([acc x] (dissoc acc x)))
+    :else
+    (fn
+      ([] from)
+      ([acc] acc)
+      ([acc x] (disj acc x)))))
+
+(defn without
+  "The opposite of x/into: dissociate or disjoin from the target."
+  ([target]
+    (reduce (without-rf target)))
+  ([target keys]
+    (without target identity keys))
+  ([target xform keys]
+    (let [rf (xform (without-rf target))]
+      (if-let [rf (and (map? keys) (kvreducible? keys) (some-kvrf rf))]
+        (rf (core/reduce-kv rf (rf) keys))
+        (rf (core/reduce rf (rf) keys))))))
+
 (defn minimum
   ([comparator]
     (minimum comparator nil))

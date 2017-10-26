@@ -12,7 +12,7 @@ In `net.cgrand.xforms`:
 
  * regular ones: `partition` (1 arg), `reductions`, `for`, `take-last`, `drop-last`, `window` and `window-by-time`
  * higher-order ones: `by-key`, `into-by-key`, `multiplex`, `transjuxt`, `partition` (2+ args)
- * 1-item ones: `reduce`, `into`, `transjuxt`, `last`, `count`, `avg`, `sd`, `min`, `minimum`, `max`, `maximum`, `str`
+ * 1-item ones: `reduce`, `into`, `without`, `transjuxt`, `last`, `count`, `avg`, `sd`, `min`, `minimum`, `max`, `maximum`, `str`
 
 In `net.cgrand.xforms.io`:
  * `sh` to use any process as a transducer
@@ -27,7 +27,7 @@ In `net.cgrand.xforms.io`:
 
 *Transducing contexts*:
 
- * in `net.cgrand.xforms`: `transjuxt` (for performing several transductions in a single pass), `iterator` (clojure only), `into`, `count` and `some`.
+ * in `net.cgrand.xforms`: `transjuxt` (for performing several transductions in a single pass), `iterator` (clojure only), `into`, `without`, `count` and `some`.
  * in `net.cgrand.xforms.io`: `line-out` (3+ args) and `edn-out` (3+ args).
 
 *Reducible views* (in `net.cgrand.xforms.io`): `lines-in` and `edn-in`.
@@ -37,7 +37,7 @@ In `net.cgrand.xforms.io`:
 Add this dependency to your project:
 
 ```clj
-[net.cgrand/xforms "0.12.1"]
+[net.cgrand/xforms "0.13.0"]
 ```
 
 ```clj

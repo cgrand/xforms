@@ -90,6 +90,10 @@
   (is (= (into [] (comp (x/partition 2 2 nil) (x/into [])) (range 8))
         [[[0 1] [2 3] [4 5] [6 7]]])))
 
+(deftest without
+  (is (= {0 :ok 2 :ok 4 :ok 6 :ok 8 :ok} (x/without (zipmap (range 10) (repeat :ok)) (filter odd?) (range 20))))
+  (is (= #{0 2 4 6 8 } (x/without (set (range 10)) (filter odd?) (range 20)))))
+
 #?(:clj
     (deftest iterator
       (is (true? (.hasNext (x/iterator x/count (.iterator (range 5))))))
