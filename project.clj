@@ -1,4 +1,4 @@
-(defproject net.cgrand/xforms "0.13.0"
+(defproject net.cgrand/xforms "0.15.0"
   :description "Extra transducers for Clojure"
   :url "https://github.com/cgrand/xforms"
   :license {:name "Eclipse Public License"
