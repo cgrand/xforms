@@ -5,7 +5,7 @@
              [net.cgrand.macrovich :as macros]
              [net.cgrand.xforms :refer [for kvrf let-complete]])
       :clj (:require [net.cgrand.macrovich :as macros]))
-  (:refer-clojure :exclude [some reduce reductions into count for partition str last keys vals min max drop-last take-last])
+  (:refer-clojure :exclude [some reduce reductions into count for partition str last keys vals min max drop-last take-last sort sort-by])
   (:require [#?(:clj clojure.core :cljs cljs.core) :as core]
     [net.cgrand.xforms.rfs :as rf])
   #?(:cljs (:import [goog.structs Queue])))
@@ -439,7 +439,25 @@
               (if (< n (.size dq)) 
                 (rf acc (.poll dq))
                 acc)))))))
+  
   )
+
+(defn sort
+  ([] (sort compare))
+  ([cmp]
+    (fn [rf]
+      (let [buf #?(:clj (java.util.ArrayList.) :cljs #js [])]
+        (fn
+          ([] (rf))
+          ([acc] (rf (core/reduce rf acc (doto buf #?(:clj (java.util.Collections/sort cmp) :cljs (.sort cmp))))))
+          ([acc x] (#?(:clj .add :cljs .push) buf x) acc))))))
+
+(defn sort-by
+  ([kfn] (sort-by kfn compare))
+  ([kfn cmp]
+    (sort (fn [a b]
+            #?(:clj (.compare ^java.util.Comparator cmp (kfn a) (kfn b))
+               :cljs (cmp (kfn a) (kfn b)))))))
 
 (defn reductions
   "Transducer version of reductions. There's a difference in behavior when init is not provided: (f) is used.

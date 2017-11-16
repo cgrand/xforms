@@ -10,7 +10,7 @@ More transducers and reducing functions for Clojure(script)!
 
 In `net.cgrand.xforms`:
 
- * regular ones: `partition` (1 arg), `reductions`, `for`, `take-last`, `drop-last`, `window` and `window-by-time`
+ * regular ones: `partition` (1 arg), `reductions`, `for`, `take-last`, `drop-last`, `sort`, `sort-by`, `window` and `window-by-time`
  * higher-order ones: `by-key`, `into-by-key`, `multiplex`, `transjuxt`, `partition` (2+ args)
  * 1-item ones: `reduce`, `into`, `without`, `transjuxt`, `last`, `count`, `avg`, `sd`, `min`, `minimum`, `max`, `maximum`, `str`
 
@@ -32,12 +32,14 @@ In `net.cgrand.xforms.io`:
 
 *Reducible views* (in `net.cgrand.xforms.io`): `lines-in` and `edn-in`.
 
+**Note:** it should always be safe to update to the latest xforms version; short of bugfixes, breaking changes are avoided.
+
 ## Usage
 
 Add this dependency to your project:
 
 ```clj
-[net.cgrand/xforms "0.13.0"]
+[net.cgrand/xforms "0.14.0"]
 ```
 
 ```clj

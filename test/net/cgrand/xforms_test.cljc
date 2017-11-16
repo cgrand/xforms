@@ -134,3 +134,9 @@
 (deftest do-not-kvreduce-vectors
   (is (= {0 nil 1 nil} (x/into {} (x/for [[k v] %] [k v]) [[0] [1]])))
   (is (= {0 nil 1 nil} (x/into {} (x/for [_ % [k v] [[0] [1]]] [k v]) ["a"]))))
+
+(deftest sorting
+  (is (= (range 100) (x/into [] (x/sort) (shuffle (range 100)))))
+  (is (= (reverse (range 100)) (x/into [] (x/sort >) (shuffle (range 100)))))
+  (is (= (sort-by str (range 100)) (x/into [] (x/sort-by str) (shuffle (range 100)))))
+  (is (= (sort-by str (comp - compare) (range 100)) (x/into [] (x/sort-by str (comp - compare)) (shuffle (range 100))))))
