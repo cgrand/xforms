@@ -1,0 +1,13 @@
+lib/*
+multi-lib/*
+coref
+classes/*
+target/*
+pom.xml*
+doc*
+.lein*
+.nrepl*
+.idea
+*.iml
+.DS_Store
+*~
