@@ -5,7 +5,7 @@ More transducers and reducing functions for Clojure(script)!
 [![Build Status](https://travis-ci.org/cgrand/xforms.png?branch=master)](https://travis-ci.org/cgrand/xforms)
 
 *Transducers* can be classified in three groups: regular ones, higher-order ones
-(which accept other transducers as arguments) and aggrerators (transdcuers which emit only 1 item out no matter how many went in).
+(which accept other transducers as arguments) and aggregators (transducers which emit only 1 item out no matter how many went in).
 Aggregators generally only make sense in the context of a higher-order transducer. 
 
 In `net.cgrand.xforms`:
