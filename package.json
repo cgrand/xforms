@@ -1,6 +1,6 @@
 {
   "name": "xforms",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "description": "Extra transducers for Clojurescript",
   "repository": "https://github.com/cgrand/xforms.git",
   "author": "Christophe Grand <christophe@cgrand.net>",

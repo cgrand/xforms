@@ -5,14 +5,14 @@ More transducers and reducing functions for Clojure(script)!
 [![Build Status](https://travis-ci.org/cgrand/xforms.png?branch=master)](https://travis-ci.org/cgrand/xforms)
 
 *Transducers* can be classified in three groups: regular ones, higher-order ones
-(which accept other transducers as arguments) and 1-item ones which emit only 1 item out no matter how many went in.
-1-item transducers generally only make sense in the context of a higher-order transducer. 
+(which accept other transducers as arguments) and aggrerators (transdcuers which emit only 1 item out no matter how many went in).
+Aggregators generally only make sense in the context of a higher-order transducer. 
 
 In `net.cgrand.xforms`:
 
- * regular ones: `partition` (1 arg), `reductions`, `for`, `take-last`, `drop-last`, `sort`, `sort-by`, `window` and `window-by-time`
+ * regular ones: `partition` (1 arg), `reductions`, `for`, `take-last`, `drop-last`, `sort`, `sort-by`, `wrap`, `window` and `window-by-time`
  * higher-order ones: `by-key`, `into-by-key`, `multiplex`, `transjuxt`, `partition` (2+ args)
- * 1-item ones: `reduce`, `into`, `without`, `transjuxt`, `last`, `count`, `avg`, `sd`, `min`, `minimum`, `max`, `maximum`, `str`
+ * aggregators: `reduce`, `into`, `without`, `transjuxt`, `last`, `count`, `avg`, `sd`, `min`, `minimum`, `max`, `maximum`, `str`
 
 In `net.cgrand.xforms.io`:
  * `sh` to use any process as a transducer
@@ -27,7 +27,7 @@ In `net.cgrand.xforms.io`:
 
 *Transducing contexts*:
 
- * in `net.cgrand.xforms`: `transjuxt` (for performing several transductions in a single pass), `iterator` (clojure only), `into`, `without`, `count` and `some`.
+ * in `net.cgrand.xforms`: `transjuxt` (for performing several transductions in a single pass), `iterator` (clojure only), `into`, `without`, `count`, `str` (2 args) and `some`.
  * in `net.cgrand.xforms.io`: `line-out` (3+ args) and `edn-out` (3+ args).
  * in `net.cgrand.xforms.nodejs.stream`: `transformer`.
 
@@ -40,7 +40,7 @@ In `net.cgrand.xforms.io`:
 Add this dependency to your project:
 
 ```clj
-[net.cgrand/xforms "0.15.0"]
+[net.cgrand/xforms "0.16.0"]
 ```
 
 ```clj
@@ -151,7 +151,7 @@ It's worth noting that all transformed outputs are subsequently interleaved. See
 ([false 0] [true 1] [false 2] [true 3] [false 4] [true 5] [false 6] [true 7])
 ```
 
-That's why most of the time the last stage of the sub-transducer will be a 1-item transducer like `x/reduce` or `x/into`:
+That's why most of the time the last stage of the sub-transducer will be an aggregator like `x/reduce` or `x/into`:
 
 ```clj
 => (sequence (x/partition 2 1 (x/into [])) (range 8))

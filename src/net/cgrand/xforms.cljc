@@ -248,7 +248,34 @@
 
 (def max (reduce rf/max))
 
-(def str (reduce rf/str))
+(defn str
+  "When used as a value, it's an aggregating transducer that concatenates input values
+   into a single output value. 
+   When used as a function of two args (xform and coll) it's a transducing context that
+   concatenates all values in a string."
+  {:arglists '([xform coll])}
+  ([rf] ((reduce rf/str) rf))
+  ([xform coll]
+    (transduce xform rf/str coll)))
+
+(defn wrap
+  "Transducer. Adds open as the first item, and close as the last. Optionally inserts delim between each input item."
+  ([open close]
+    (fn [rf]
+      (let [vrf (volatile! nil)]
+        (vreset! vrf
+          (fn [acc x]
+            (let [acc (rf acc open)]
+              (vreset! vrf rf)
+              (if (reduced? acc)
+                acc
+                (rf acc x)))))
+        (fn
+          ([] (rf))
+          ([acc] (rf (unreduced (rf acc close))))
+          ([acc x] (@vrf acc x))))))
+  ([open close delim]
+    (comp (interpose delim) (wrap open close))))
 
 (defn vals [rf]
   (kvrf
