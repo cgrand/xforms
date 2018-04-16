@@ -15,7 +15,7 @@ In `net.cgrand.xforms`:
  * aggregators: `reduce`, `into`, `without`, `transjuxt`, `last`, `count`, `avg`, `sd`, `min`, `minimum`, `max`, `maximum`, `str`
 
 In `net.cgrand.xforms.io`:
- * `sh` to use any process as a transducer
+ * `sh` to use any process as a reducible collection (of stdout lines) or as a transducers (input as stdin lines, stdout lines as output).
 
  
 *Reducing functions*
