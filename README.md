@@ -256,6 +256,30 @@ Evaluation count : 24 in 6 samples of 4 calls.
  * Added `x/reductions`
  * Now if the first collection expression in `x/for` is not a placeholder then `x/for` works like `x/for` but returns an eduction and performs all iterations using reduce. 
 
+## Troubleshooting xforms in a Clojurescript dev environment
+
+If you use xforms with Clojurescript and the Emacs editor to start your figwheel REPL be sure to include the `cider.nrepl/cider-middleware` to your figwheel's nrepl-middleware. 
+```
+  :figwheel {...
+             :nrepl-middleware [cider.nrepl/cider-middleware;;<= that middleware
+                                refactor-nrepl.middleware/wrap-refactor
+                                cemerick.piggieback/wrap-cljs-repl]
+             ...}
+```
+Otherwise a strange interaction occurs and every results from your REPL evaluation would be returned as a String. Eg.:
+```
+cljs.user> 1
+"1"
+cljs.user>
+```
+instead of:
+```
+cljs.user> 1
+1
+cljs.user>
+```
+
+
 ## License
 
 Copyright © 2015-2016 Christophe Grand
