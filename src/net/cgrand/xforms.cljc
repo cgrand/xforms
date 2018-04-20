@@ -387,7 +387,7 @@
       (if (fn? step-or-xform)
         (partition n n step-or-xform)
         (partition n step-or-xform (into []))))
-    ([n step pad-or-xform]
+    ([^long n step pad-or-xform]
       (if (fn? pad-or-xform)
         (let [xform pad-or-xform]
           (fn [rf]
@@ -409,7 +409,7 @@
                         acc)
                       acc)))))))
         (partition n step pad-or-xform (into []))))
-    ([n step pad xform]
+    ([^long n step pad xform]
       (fn [rf]
         (let [mxrf (multiplexable rf)
               dq (java.util.ArrayDeque. n)
@@ -440,7 +440,7 @@
      (fn [rf]
        (let )))
   
-  (defn take-last [n]
+  (defn take-last [^long n]
     (fn [rf]
       (let [dq (java.util.ArrayDeque. n)]
         (fn
@@ -453,7 +453,7 @@
   
   (defn drop-last 
     ([] (drop-last 1))
-    ([n]
+    ([^long n]
       (fn [rf]
         (let [dq (java.util.ArrayDeque. n)
               xform (map #(if (identical? dq %) nil %))
