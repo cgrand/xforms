@@ -55,11 +55,13 @@
 
 (defn avg
   "Reducing fn to compute the arithmetic mean."
-  ([] (transient [0 0]))
-  ([[n sum]] (/ sum n))
+  ([] nil)
+  ([^doubles acc] (when acc (/ (aget acc 1) (aget acc 0))))
   ([acc x] (avg acc x 1))
-  ([[n sum :as acc] x w] ; weighted mean
-    (-> acc (assoc! 0 (+ n w)) (assoc! 1 (+ sum (* w x))))))
+  ([^doubles acc x w] ; weighted mean
+    (doto (or acc #?(:clj (double-array 3) :cljs #js [0.0 0.0]))
+      (aset 0 (+ (aget acc 0) w))
+      (aset 1 (+ (aget acc 1) (* w x))))))
 
 (defn sd
   "Reducing fn to compute the standard deviation. Returns 0 if no or only one item."
