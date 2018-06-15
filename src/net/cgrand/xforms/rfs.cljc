@@ -29,7 +29,14 @@
   
 (defn minimum
  ([comparator]
-   (minimum comparator nil))
+   (fn
+     ([] nil)
+     ([x] x)
+     ([a b] (cond
+              (nil? a) b
+              (nil? b) a
+              (pos? (#?(:clj .compare :cljs cmp) comparator a b)) b
+              :else a))))
  ([#?(:clj ^java.util.Comparator comparator :cljs comparator) absolute-maximum]
    (fn
      ([] ::+∞)
@@ -40,7 +47,14 @@
 
 (defn maximum
   ([comparator]
-    (maximum comparator nil))
+    (fn
+     ([] nil)
+     ([x] x)
+     ([a b] (cond
+              (nil? a) b
+              (nil? b) a
+              (neg? (#?(:clj .compare :cljs cmp) comparator a b)) b
+              :else a))))
   ([#?(:clj ^java.util.Comparator comparator :cljs comparator) absolute-minimum]
     (fn
       ([] ::-∞)

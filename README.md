@@ -40,7 +40,7 @@ In `net.cgrand.xforms.io`:
 Add this dependency to your project:
 
 ```clj
-[net.cgrand/xforms "0.18.1"]
+[net.cgrand/xforms "0.18.2"]
 ```
 
 ```clj
