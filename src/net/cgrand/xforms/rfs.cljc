@@ -28,7 +28,7 @@
            :else 0))))
   
 (defn minimum
- ([comparator]
+ ([#?(:clj ^java.util.Comparator comparator :cljs comparator)]
    (fn
      ([] nil)
      ([x] x)
@@ -46,7 +46,7 @@
      ([a b] (if (or (#?(:clj identical? :cljs keyword-identical?) ::+∞ a) (pos? (#?(:clj .compare :cljs cmp) comparator a b))) b a)))))
 
 (defn maximum
-  ([comparator]
+  ([#?(:clj ^java.util.Comparator comparator :cljs comparator)]
     (fn
      ([] nil)
      ([x] x)
