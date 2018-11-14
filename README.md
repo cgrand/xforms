@@ -11,7 +11,7 @@ Aggregators generally only make sense in the context of a higher-order transduce
 In `net.cgrand.xforms`:
 
  * regular ones: `partition` (1 arg), `reductions`, `for`, `take-last`, `drop-last`, `sort`, `sort-by`, `wrap`, `window` and `window-by-time`
- * higher-order ones: `by-key`, `into-by-key`, `multiplex`, `transjuxt`, `partition` (2+ args)
+ * higher-order ones: `by-key`, `into-by-key`, `multiplex`, `transjuxt`, `partition` (2+ args), `time`
  * aggregators: `reduce`, `into`, `without`, `transjuxt`, `last`, `count`, `avg`, `sd`, `min`, `minimum`, `max`, `maximum`, `str`
 
 In `net.cgrand.xforms.io`:
@@ -227,6 +227,24 @@ Evaluation count : 24 in 6 samples of 4 calls.
 ```
 
 ## Changelog
+
+### 0.19.0
+
+`time` allows to measure time spent in one transducer (excluding time spent downstream).
+
+```clj
+=> (time ; good old Clojure time
+     (count (into [] (comp
+                     (x/time "mapinc" (map inc))
+                     (x/time "filterodd" (filter odd?))) (range 1e6))))
+filterodd: 61.771738 msecs
+mapinc: 143.895317 msecs
+"Elapsed time: 438.34291 msecs"
+500000
+```
+
+First argument can be a function that gets passed the time (in ms),
+this allows for example to log time instead of printing it.
 
 ### 0.9.5
 

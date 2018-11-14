@@ -5,7 +5,9 @@
              [net.cgrand.macrovich :as macros]
              [net.cgrand.xforms :refer [for kvrf let-complete]])
       :clj (:require [net.cgrand.macrovich :as macros]))
-  (:refer-clojure :exclude [some reduce reductions into count for partition str last keys vals min max drop-last take-last sort sort-by])
+  (:refer-clojure :exclude [some reduce reductions into count for partition
+                            str last keys vals min max drop-last take-last
+                            sort sort-by time])
   (:require [#?(:clj clojure.core :cljs cljs.core) :as core]
     [net.cgrand.xforms.rfs :as rf])
   #?(:cljs (:import [goog.structs Queue])))
@@ -736,6 +738,51 @@
         collect-xform)))
   ([xforms-map coll]
     (transduce (transjuxt xforms-map) rf/last coll)))
+
+(macros/replace
+  [#?(:cljs {(java.util.concurrent.atomic.AtomicLong.) (atom 0)
+             (System/nanoTime) (system-time)
+             (.addAndGet at (- t (System/nanoTime))) (swap! at + (- t (system-time)))
+             (.addAndGet at (- (System/nanoTime) t)) (swap! at + (- (system-time) t))
+             .size .getCount})]
+  
+  (defn time
+    "Measures the time spent in this transformation and prints the measured time.
+   tag-or-f may be either a function of 1 argument (measured time in ms) in which case
+   this function will be called instead of printing, or tag-or-f will be print before the measured time."
+    ([xform] (time "Elapsed time" xform))
+    ([tag-or-f xform]
+      (let [pt (if (fn? tag-or-f)
+                 tag-or-f
+                 #(println (core/str tag-or-f ": " % " msecs")))]
+        (fn [rf]
+          (let [at (java.util.concurrent.atomic.AtomicLong.)
+                rf
+                (fn
+                  ([] (rf))
+                  ([acc] (let [t (System/nanoTime)
+                               r (rf acc)]
+                           (.addAndGet at (- t (System/nanoTime)))
+                           r))
+                  ([acc x] 
+                    (let [t (System/nanoTime) 
+                          r (rf acc x)]
+                      (.addAndGet at (- t (System/nanoTime)))
+                      r)))
+                rf (xform rf)]
+            (fn 
+              ([] (rf))
+              ([acc]
+                (let [t (System/nanoTime)
+                      r (rf acc)
+                      total (.addAndGet at (- (System/nanoTime) t))]
+                  (pt #?(:clj (* total 1e-6) :cljs total))
+                  r))
+              ([acc x]
+                (let [t (System/nanoTime)
+                      r (rf acc x)]
+                  (.addAndGet at (- (System/nanoTime) t))
+                  r)))))))))
 
 #_(defn rollup
    "Roll-up input data along the provided dimensions (which are functions of one input item),
