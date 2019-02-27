@@ -122,7 +122,7 @@ Padding is achieved as usual:
 
 ;; avg of last 4 items
 => (sequence
-     (x/window 4 x/avg #(x/avg %1 %2 -1))
+     (x/window 4 rf/avg #(rf/avg %1 %2 -1))
      nums)
 (11 19/2 17 77/4 18 37/2 79/4 77/4)
 
