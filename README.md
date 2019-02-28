@@ -128,13 +128,17 @@ Padding is achieved as usual:
 
 ;; min of last 3 items
 => (sequence
-     (x/window 3
-       (fn
-         ([] (sorted-set))
-         ([s] (first s))
-         ([s x] (conj s x)))
-       disj)
-     nums)
+        (x/window 3
+          (fn
+            ([] (sorted-map))
+            ([m] (key (first m)))
+            ([m x] (update m x (fnil inc 0))))
+          (fn [m x]
+            (let [n (dec (m x))]
+              (if (zero? n)
+                (dissoc m x)
+                (assoc m x (dec n))))))
+        nums)
 (11 8 8 8 6 6 6 10)
 ```
 
