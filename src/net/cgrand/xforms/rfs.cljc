@@ -39,11 +39,11 @@
               :else a))))
  ([#?(:clj ^java.util.Comparator comparator :cljs comparator) absolute-maximum]
    (fn
-     ([] ::+∞)
-     ([x] (if (#?(:clj identical? :cljs keyword-identical?) ::+∞ x)
+     ([] ::+infinity)
+     ([x] (if (#?(:clj identical? :cljs keyword-identical?) ::+infinity x)
             absolute-maximum
             x))
-     ([a b] (if (or (#?(:clj identical? :cljs keyword-identical?) ::+∞ a) (pos? (#?(:clj .compare :cljs cmp) comparator a b))) b a)))))
+     ([a b] (if (or (#?(:clj identical? :cljs keyword-identical?) ::+infinity a) (pos? (#?(:clj .compare :cljs cmp) comparator a b))) b a)))))
 
 (defn maximum
   ([#?(:clj ^java.util.Comparator comparator :cljs comparator)]
@@ -57,11 +57,11 @@
               :else a))))
   ([#?(:clj ^java.util.Comparator comparator :cljs comparator) absolute-minimum]
     (fn
-      ([] ::-∞)
-      ([x] (if (#?(:clj identical? :cljs keyword-identical?) ::-∞ x)
+      ([] ::-infinity)
+      ([x] (if (#?(:clj identical? :cljs keyword-identical?) ::-infinity x)
              absolute-minimum
              x))
-      ([a b] (if (or (#?(:clj identical? :cljs keyword-identical?) ::-∞ a) (neg? (#?(:clj .compare :cljs cmp) comparator a b))) b a)))))
+      ([a b] (if (or (#?(:clj identical? :cljs keyword-identical?) ::-infinity a) (neg? (#?(:clj .compare :cljs cmp) comparator a b))) b a)))))
 
 (def min (minimum compare))
 
