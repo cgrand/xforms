@@ -657,7 +657,7 @@
     (transduce (comp xform count) rf/last coll)))
 
 (defn multiplex
-  "Returns a transducer that runs several transducers (sepcified by xforms) in parallel.
+  "Returns a transducer that runs several transducers (specified by xforms) in parallel.
    If xforms is a map, values of the map are transducers and keys are used to tag each
    transducer output:
    => (into [] (x/multiplex [(map inc) (map dec)]) (range 3))
@@ -674,11 +674,11 @@
                              xforms)
                          (into #{} (map #(% mrf)) xforms)))
           invoke-rfs (if (map? xforms)
-                       (fn [acc invoke]
+                       (fn [acc step? invoke]
                          (reduce-kv
                            (fn [acc tag rf]
                              (let [acc (invoke rf acc)]
-                               (if (reduced? acc)
+                               (if (and step? (reduced? acc))
                                  (if (reduced? @acc)
                                    (do
                                      (vreset! rfs nil)
@@ -686,11 +686,11 @@
                                    (do (vswap! rfs dissoc tag) (rf @acc)))
                                  acc)))
                            acc @rfs))
-                       (fn [acc invoke]
+                       (fn [acc step? invoke]
                          (core/reduce
                            (fn [acc rf]
                              (let [acc (invoke rf acc)]
-                               (if (reduced? acc)
+                               (if (and step? (reduced? acc))
                                  (if (reduced? @acc)
                                    (do
                                      (vreset! rfs nil)
@@ -700,14 +700,14 @@
                            acc @rfs)))]
       (kvrf
         ([] (rf))
-        ([acc] (rf (invoke-rfs acc #(%1 %2))))
+        ([acc] (rf (invoke-rfs acc false #(%1 %2))))
         ([acc x]
-          (let [acc (invoke-rfs acc #(%1 %2 x))]
+          (let [acc (invoke-rfs acc true #(%1 %2 x))]
             (if (zero? (core/count @rfs))
               (ensure-reduced acc)
               acc)))
         ([acc k v]
-          (let [acc (invoke-rfs acc #(%1 %2 k v))]
+          (let [acc (invoke-rfs acc true #(%1 %2 k v))]
             (if (zero? (core/count @rfs))
               (ensure-reduced acc)
               acc)))))))

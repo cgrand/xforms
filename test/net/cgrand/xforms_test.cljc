@@ -1,6 +1,7 @@
 (ns net.cgrand.xforms-test
   (:require [clojure.test :refer [is deftest testing]]
-            [net.cgrand.xforms :as x]))
+            [net.cgrand.xforms :as x]
+            [net.cgrand.xforms.rfs :as rf]))
 
 (defn trial
   "A transducing context for testing that transducers are well-behaved towards
@@ -140,3 +141,39 @@
   (is (= (reverse (range 100)) (x/into [] (x/sort >) (shuffle (range 100)))))
   (is (= (sort-by str (range 100)) (x/into [] (x/sort-by str) (shuffle (range 100)))))
   (is (= (sort-by str (comp - compare) (range 100)) (x/into [] (x/sort-by str (comp - compare)) (shuffle (range 100))))))
+
+(deftest multiplex
+  (testing "Respects reduced from multiplexed reductions and from the downstream reduction."
+    (testing "Respects multiplexed reduced."
+      (is (= [3]
+             (into []
+                   (x/multiplex [(x/reduce rf/some)])
+                   [3 5 2])))
+      (is (= {:x 3}
+             (into {}
+                   (x/multiplex {:x (x/reduce rf/some)})
+                   [3 5 2]))))
+
+    (testing "Respects downstream reduced."
+      (is (= 4
+             (transduce
+               (x/multiplex [(map inc)])
+               rf/some
+               [3 5 2])))
+      (is (= [:x 4]
+             (transduce
+               (x/multiplex {:x (map inc)})
+               rf/some
+               [3 5 2]))))
+
+    (testing "Doesn't repeat multiplexed completion."
+      (is (= 2
+             (transduce
+               (x/multiplex [(x/reduce rf/last)])
+               rf/some
+               [3 5 2])))
+      (is (= [:x 2]
+             (transduce
+               (x/multiplex {:x (x/reduce rf/last)})
+               rf/some
+               [3 5 2]))))))
