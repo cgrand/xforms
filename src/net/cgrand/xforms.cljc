@@ -348,7 +348,10 @@
                          @acc) ; downstream is done, propagate
                        (do
                          (vswap! m assoc! k nop-rf)
-                         (krf @acc))) ; TODO think again
+                         (let [acc (krf @acc)]
+                           (when (reduced? acc)
+                             (vreset! m (transient {})))
+                           acc)))
                      acc))))
             (let [kfn (or kfn key')
                   vfn (or vfn val')]
@@ -366,7 +369,10 @@
                           @acc) ; downstream is done, propagate
                         (do
                           (vswap! m assoc! k nop-rf)
-                          (krf @acc)))
+                          (let [acc (krf @acc)]
+                            (when (reduced? acc)
+                              (vreset! m (transient {})))
+                            acc)))
                       acc)))))))))))
 
 (defn into-by-key
@@ -683,7 +689,11 @@
                                    (do
                                      (vreset! rfs nil)
                                      acc) ; downstream is done, propagate
-                                   (do (vswap! rfs dissoc tag) (rf @acc)))
+                                   (do (vswap! rfs dissoc tag)
+                                       (let [acc (rf @acc)]
+                                         (when (reduced? acc)
+                                           (vreset! rfs nil))
+                                         acc)))
                                  acc)))
                            acc @rfs))
                        (fn [acc step? invoke]
@@ -695,7 +705,11 @@
                                    (do
                                      (vreset! rfs nil)
                                      acc) ; downstream is done, propagate
-                                   (do (vswap! rfs disj rf) (rf @acc)))
+                                   (do (vswap! rfs disj rf)
+                                       (let [acc (rf @acc)]
+                                         (when (reduced? acc)
+                                           (vreset! rfs nil))
+                                         acc)))
                                  acc)))
                            acc @rfs)))]
       (kvrf
