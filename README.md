@@ -232,6 +232,10 @@ Evaluation count : 24 in 6 samples of 4 calls.
 
 ## Changelog
 
+### 0.19.3
+
+ * Bump `net.cgrand/macrovich` so Clojure and ClojureScript remain `provided` and are not pulled in transitively
+
 ### 0.19.0
 
 `time` allows to measure time spent in one transducer (excluding time spent downstream).
