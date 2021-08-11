@@ -70,6 +70,10 @@
     (is (trial (x/for [x % y (range x)] [x y])
           4 (range 16)))
     (is (trial (x/reduce +)
+          4 (range 16)))
+    (is (trial x/parallel
+          4 (range 16)))
+    (is (trial (comp x/parallel (map inc) x/parallel)
           4 (range 16)))))
 
 (deftest reductions
@@ -140,3 +144,40 @@
   (is (= (reverse (range 100)) (x/into [] (x/sort >) (shuffle (range 100)))))
   (is (= (sort-by str (range 100)) (x/into [] (x/sort-by str) (shuffle (range 100)))))
   (is (= (sort-by str (comp - compare) (range 100)) (x/into [] (x/sort-by str (comp - compare)) (shuffle (range 100))))))
+
+(deftest parallel
+  (is (= [1 2 3 4 5]
+         (into [] (comp x/parallel (map inc)) (range 5))
+         (into [] (comp (map inc) x/parallel) (range 5))
+         (into [] (comp x/parallel (map inc) x/parallel) (range 5))))
+  (let [barrier-1 (java.util.concurrent.CyclicBarrier. 2)
+        tick! #(.await barrier-1 500 java.util.concurrent.TimeUnit/MILLISECONDS)
+        barrier-2 (java.util.concurrent.CyclicBarrier. 2)
+        tock! #(.await barrier-2 500 java.util.concurrent.TimeUnit/MILLISECONDS)
+        trace (atom [])
+        log! #(swap! trace conj %)
+        rf (fn
+             ([acc]
+              (log! [:finish acc])
+              acc)
+             ([acc x]
+              (log! [:start x])
+              (tick!)
+              (tock!)
+              (log! [:end x])
+              (+ acc x)))]
+    (testing "test concurrency"
+      (dotimes [_ 100]
+        (reset! trace [])
+        (let [par (x/parallel rf)]
+          (is (= 10 (par 10 1)) "first call just returns initial state")
+          (tick!)
+          (is (= [[:start 1]] @trace) "first elements starts reducing on the background")
+          (tock!)
+          (is (= 11 (par 10 2)) "second call returns first state")
+          (tick!)
+          (is (= [[:start 1] [:end 1] [:start 2]] @trace) "first element finished, second starts reducing")
+          (tock!)
+          (is (= 13 (par 11)) "completion call returns final state")
+          (is (= [[:start 1] [:end 1] [:start 2] [:end 2] [:finish 13]] @trace)
+              "second element finishes, completion"))))))

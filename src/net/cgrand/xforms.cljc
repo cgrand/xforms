@@ -806,3 +806,46 @@
    ([dimensions valfn summary-fn coll]
      (into {} (rollup dimensions valfn summary-fn) coll)))
 )
+
+(defn parallel [rf]
+  "A transducer that runs the given reducing function in the background.
+   That is, when (parallel rf) is given an element x to reduce, it
+   starts a future running rf on x. When given the next element, it
+   will wait for the previous future to finish first before launching
+   the (rf acc y) future.
+
+   When (parallel rf) is completed (called with arity 1), it waits
+   until the previous element has been reduced, and then finalizes rf
+   synchronously.
+
+   This can be used to parallelize a chain of transducers. However,
+   since (parallel rf) only does a single call to rf on the
+   background, it's only useful when parallelizing transducers with
+   expensive operations on single elements. It probably won't help
+   with speeding up a situation where a large number of elements are
+   reduced with a relatively cheap function.
+
+   In general, (comp parallelize xform) and (comp xform parallelize)
+   has the same result as xform.
+
+   Usage patterns:
+     (comp (map expensive-operation)
+           parallelize
+           (map expensive-operation2))
+
+     (reducing-context (parallelize expensive-reducing-function))"
+  (let [memory (atom nil)]
+    (fn
+      ([] (rf))
+      ([acc]
+       (let [prev (if-let [pending @memory]
+                    @pending
+                    acc)]
+         (rf (unreduced prev)))) ;; ???
+      ([acc input]
+       (let [prev (if-let [pending @memory]
+                    @pending
+                    acc)]
+         (when-not (reduced? prev)
+           (reset! memory (future (rf prev input))))
+         prev)))))
