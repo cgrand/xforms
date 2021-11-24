@@ -94,7 +94,8 @@
   (is (= {0 :ok 2 :ok 4 :ok 6 :ok 8 :ok} (x/without (zipmap (range 10) (repeat :ok)) (filter odd?) (range 20))))
   (is (= #{0 2 4 6 8 } (x/without (set (range 10)) (filter odd?) (range 20)))))
 
-#?(:clj
+#?(:bb nil ;; babashka doesn't currently support calling iterator on range type
+   :clj
     (deftest iterator
       (is (true? (.hasNext (x/iterator x/count (.iterator (range 5))))))
       (is (is (= [5] (iterator-seq (x/iterator x/count (.iterator (range 5)))))))

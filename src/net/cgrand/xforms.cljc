@@ -99,7 +99,8 @@
                     (not (arities 2)) (conj (let [[[acc karg varg] & body] (arities 3)]
                                               `([~acc [~karg ~varg]] ~@body))))]
     `(reify
-       ~@(macros/case :clj '[clojure.lang.Fn])
+       #?@(:bb [] ;; babashka currently only supports reify with one Java interface at a time
+           :default [~@(macros/case :clj '[clojure.lang.Fn])])
        KvRfable
        (some-kvrf [this#] this#)
        ~(macros/case :cljs `core/IFn :clj 'clojure.lang.IFn)
