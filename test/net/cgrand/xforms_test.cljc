@@ -1,4 +1,5 @@
 (ns net.cgrand.xforms-test
+  (:refer-clojure :exclude [partition reductions])
   (:require [clojure.test :refer [is deftest testing]]
             [net.cgrand.xforms :as x]))
 
