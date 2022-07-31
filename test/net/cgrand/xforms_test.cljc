@@ -1,5 +1,5 @@
 (ns net.cgrand.xforms-test
-  (:require [clojure.test :refer [is deftest testing]]
+  (:require [clojure.test :refer [are is deftest testing]]
             [net.cgrand.xforms :as x]))
 
 (defn trial
@@ -140,3 +140,16 @@
   (is (= (reverse (range 100)) (x/into [] (x/sort >) (shuffle (range 100)))))
   (is (= (sort-by str (range 100)) (x/into [] (x/sort-by str) (shuffle (range 100)))))
   (is (= (sort-by str (comp - compare) (range 100)) (x/into [] (x/sort-by str (comp - compare)) (shuffle (range 100))))))
+
+(deftest destructuring-pair?
+  (let [destructuring-pair? #'x/destructuring-pair?]
+    (are [candidate expected]
+         (= expected (destructuring-pair? candidate))
+         '[a b] true
+         '[a b c] false
+         '[& foo] false
+         '[:as foo] false
+         1 false
+         '(a b) false
+         '{foo bar} false
+         '{foo :bar} false)))
