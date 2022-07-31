@@ -557,7 +557,7 @@
       "Iterator transducing context, returns an iterator on the transformed data.
        Equivalent to (.iterator (eduction xform (iterator-seq src-iterator))) except there's is no buffering on values (as in iterator-seq),
        This buffering may cause problems when mutable objects are returned by the src-iterator."
-      [xform ^java.util.Iterator src-iterator]
+      ^java.util.Iterator [xform ^java.util.Iterator src-iterator]
       (let [NULL (Object.)
             dq (java.util.ArrayDeque. 32)
             rf (xform (fn ([acc] acc) ([acc x] (.push dq (if (some? x) x NULL)) acc)))
