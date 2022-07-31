@@ -1,0 +1,37 @@
+{:deps {local/deps {:local/root "."}}
+ :paths ["src" "test"]
+
+ :tasks
+ {:init
+  (do
+    (defn kaocha [alias args]
+      (apply shell "bin/kaocha" alias args)))
+
+  test-9
+  {:task (kaocha :clj-1-9 *command-line-args*)}
+
+  test-10
+  {:task (kaocha :clj-1-10 *command-line-args*)}
+
+  test-11
+  {:task (kaocha :clj-1-11 *command-line-args*)}
+
+  test-clj
+  {:task (doseq [alias [:clj-1-9 :clj-1-10 :clj-1-11]]
+           (kaocha alias *command-line-args*))}
+
+  test-bb
+  {:requires ([clojure.test :as t]
+              [net.cgrand.xforms-test])
+   :task (t/run-tests 'net.cgrand.xforms-test)}
+
+  perf-bb
+  {:requires ([net.cgrand.xforms :as x])
+   :task
+   (let [n 10000
+         m (zipmap (range 100) (range))
+         mapping (map (fn [[k v]] [k (inc v)]))
+         xforing (x/for [[k v] _] [k (inc v)])]
+     (time (dotimes [_ n] (into {} mapping m)))
+     (time (dotimes [_ n] (into {} xforing m)))
+     (time (dotimes [_ n] (x/into {} xforing m))))}}}
