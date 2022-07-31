@@ -1,6 +1,6 @@
 (ns net.cgrand.xforms-test
   (:refer-clojure :exclude [partition reductions])
-  (:require [clojure.test :refer [is deftest testing]]
+  (:require [clojure.test :refer [are is deftest testing]]
             [net.cgrand.xforms :as x]))
 
 (defn trial
@@ -97,9 +97,9 @@
 
 #?(:clj
     (deftest iterator
-      (is (true? (.hasNext (x/iterator x/count (.iterator (range 5))))))
-      (is (is (= [5] (iterator-seq (x/iterator x/count (.iterator (range 5)))))))
-      (is (= [[0 1] [1 2] [2 3] [3 4] [4]] (iterator-seq (x/iterator (x/partition 2 1 nil) (.iterator (range 5)))))))
+      (is (true? (.hasNext (x/iterator x/count (.iterator ^java.lang.Iterable (range 5))))))
+      (is (is (= [5] (iterator-seq (x/iterator x/count (.iterator ^java.lang.Iterable (range 5)))))))
+      (is (= [[0 1] [1 2] [2 3] [3 4] [4]] (iterator-seq (x/iterator (x/partition 2 1 nil) (.iterator ^java.lang.Iterable (range 5)))))))
     
     (deftest window-by-time
       (is (= (into 
