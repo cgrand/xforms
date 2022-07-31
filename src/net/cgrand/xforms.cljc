@@ -28,8 +28,10 @@
        (unreduced-> (-> x# ~expr) ~@exprs)))))
 
 (defn- pair? [x] (and (vector? x) (= 2 (core/count x))))
-(defn- destructuring-pair? [x]
-  (and (pair? x) (not (or (keyword? x) (= '& x)))))
+(let [kw-or-& #(or (keyword? %) (= '& %))]
+  (defn- destructuring-pair? [x]
+    (and (pair? x)
+         (not (kw-or-& (first x))))))
 
 (defmacro for
  "Like clojure.core/for with the first expression being replaced by % (or _). Returns a transducer.
