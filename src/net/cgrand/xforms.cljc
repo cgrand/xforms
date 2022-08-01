@@ -7,9 +7,10 @@
       :clj (:require [net.cgrand.macrovich :as macros]))
   (:refer-clojure :exclude [some reduce reductions into count for partition
                             str last keys vals min max drop-last take-last
-                            sort sort-by time])
+                            sort sort-by time satisfies?])
   (:require [#?(:clj clojure.core :cljs cljs.core) :as core]
-    [net.cgrand.xforms.rfs :as rf])
+    [net.cgrand.xforms.rfs :as rf]
+            #?(:clj [clojure.core.protocols]))
   #?(:cljs (:import [goog.structs Queue])))
 
 (macros/deftime
@@ -28,8 +29,10 @@
        (unreduced-> (-> x# ~expr) ~@exprs)))))
 
 (defn- pair? [x] (and (vector? x) (= 2 (core/count x))))
-(defn- destructuring-pair? [x]
-  (and (pair? x) (not (or (keyword? x) (= '& x)))))
+(let [kw-or-& #(or (keyword? %) (= '& %))]
+  (defn- destructuring-pair? [x]
+    (and (pair? x)
+         (not (kw-or-& (first x))))))
 
 (defmacro for
  "Like clojure.core/for with the first expression being replaced by % (or _). Returns a transducer.
@@ -99,7 +102,8 @@
                     (not (arities 2)) (conj (let [[[acc karg varg] & body] (arities 3)]
                                               `([~acc [~karg ~varg]] ~@body))))]
     `(reify
-       ~@(macros/case :clj '[clojure.lang.Fn])
+       #?@(:bb [] ;; babashka currently only supports reify with one Java interface at a time
+           :default [~@(macros/case :clj '[clojure.lang.Fn])])
        KvRfable
        (some-kvrf [this#] this#)
        ~(macros/case :cljs `core/IFn :clj 'clojure.lang.IFn)
@@ -124,8 +128,44 @@
 
 (macros/usetime
 
-(defn kvreducible? [coll]
- (satisfies? #?(:clj clojure.core.protocols/IKVReduce :cljs IKVReduce) coll))
+;; Workaround clojure.core/satisfies? being slow in Clojure
+;; see https://ask.clojure.org/index.php/3304/make-satisfies-as-fast-as-a-protocol-method-call
+#?(:cljs
+   (def satisfies? core/satisfies?)
+
+   :bb
+   (def satisfies? core/satisfies?)
+
+   :clj
+   (defn fast-satisfies?-fn
+     "Ported from https://github.com/clj-commons/manifold/blob/37658e91f836047a630586a909a2e22debfbbfc6/src/manifold/utils.clj#L77-L89"
+     [protocol-var]
+     (let [^java.util.concurrent.ConcurrentHashMap classes
+           (java.util.concurrent.ConcurrentHashMap.)]
+       (add-watch protocol-var ::memoization (fn [& _] (.clear classes)))
+       (fn [x]
+         (let [cls (class x)
+               val (.get classes cls)]
+           (if (nil? val)
+             (let [val (core/satisfies? @protocol-var x)]
+               (.put classes cls val)
+               val)
+             val))))))
+
+
+#?(:cljs
+   (defn kvreducible? [coll]
+     (satisfies? core/IKVReduce coll))
+
+   :clj
+   (let [satisfies-ikvreduce? #?(:bb #(satisfies? clojure.core.protocols/IKVReduce %)
+                                 :default (fast-satisfies?-fn #'clojure.core.protocols/IKVReduce))]
+     (if (satisfies-ikvreduce? (Object.))
+       (defn kvreducible?
+         "Clojure 1.11 makes everything satisfy IKVReduce, so we can short-circuit"
+         [_] true)
+       (defn kvreducible? [coll] (satisfies-ikvreduce? coll)))))
+
 
 (extend-protocol KvRfable
   #?(:clj Object :cljs default) (some-kvrf [_] nil)
@@ -556,7 +596,7 @@
       "Iterator transducing context, returns an iterator on the transformed data.
        Equivalent to (.iterator (eduction xform (iterator-seq src-iterator))) except there's is no buffering on values (as in iterator-seq),
        This buffering may cause problems when mutable objects are returned by the src-iterator."
-      [xform ^java.util.Iterator src-iterator]
+      ^java.util.Iterator [xform ^java.util.Iterator src-iterator]
       (let [NULL (Object.)
             dq (java.util.ArrayDeque. 32)
             rf (xform (fn ([acc] acc) ([acc x] (.push dq (if (some? x) x NULL)) acc)))

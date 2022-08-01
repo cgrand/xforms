@@ -232,6 +232,20 @@ Evaluation count : 24 in 6 samples of 4 calls.
 
 ## Changelog
 
+### Unreleased
+
+ * Add `deps.edn` to enable usage as a [git library](https://clojure.org/guides/deps_and_cli#_using_git_libraries)
+ * Bump `macrovich` to make Clojure and ClojureScript provided dependencies #34
+ * Fix reflection warnings in `xforms.io` #35 #36
+ * Add compatibility with [babashka](https://github.com/babashka/babashka) #42
+ * Fix `x/destructuring-pair?` #44 #45
+ * Fix `x/into` performance hit with small maps #46 #47
+ * Fix reflection and shadowing warnings in tests
+
+### 0.19.2
+
+ * Fix infinity symbol causing issues with ClojureScript #31
+
 ### 0.19.0
 
 `time` allows to measure time spent in one transducer (excluding time spent downstream).
