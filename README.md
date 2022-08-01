@@ -35,13 +35,21 @@ In `net.cgrand.xforms.io`:
 
 **Note:** it should always be safe to update to the latest xforms version; short of bugfixes, breaking changes are avoided.
 
-## Usage
+## Add as a dependency
 
-Add this dependency to your project:
+### tools.deps
+
+See the [Releases](/releases) page for coordinates.
+
+### Leiningen
+
+**Note that as of the writing of this, 0.19.3 (and perhaps later versions) are not yet published as jars**
 
 ```clj
 [net.cgrand/xforms "0.19.2"]
 ```
+
+## Usage
 
 ```clj
 => (require '[net.cgrand.xforms :as x])
@@ -232,7 +240,7 @@ Evaluation count : 24 in 6 samples of 4 calls.
 
 ## Changelog
 
-### Unreleased
+### 0.19.3
 
  * Add `deps.edn` to enable usage as a [git library](https://clojure.org/guides/deps_and_cli#_using_git_libraries)
  * Bump `macrovich` to make Clojure and ClojureScript provided dependencies #34
