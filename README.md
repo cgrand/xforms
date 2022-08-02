@@ -39,14 +39,14 @@ In `net.cgrand.xforms.io`:
 
 ### tools.deps
 
-See the [Releases](/releases) page for coordinates.
+```clj
+net.cgrand/xforms {:mvn/version "0.19.3"}
+```
 
 ### Leiningen
 
-**Note that as of the writing of this, 0.19.3 (and perhaps later versions) are not yet published as jars**
-
 ```clj
-[net.cgrand/xforms "0.19.2"]
+[net.cgrand/xforms "0.19.3"]
 ```
 
 ## Usage
