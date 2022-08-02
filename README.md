@@ -37,16 +37,25 @@ In `net.cgrand.xforms.io`:
 
 ## Add as a dependency
 
-### tools.deps
+### Clojure CLI/deps.edn
 
 ```clj
 net.cgrand/xforms {:mvn/version "0.19.3"}
 ```
 
-### Leiningen
+or
+
+```clj
+net.cgrand/xforms {:git/url "https://github.com/cgrand/xforms"
+                   :git/tag "v0.19.3"
+                   :git/sha "f4ebaea"}
+```
+
+### Leiningen/Boot
 
 ```clj
 [net.cgrand/xforms "0.19.3"]
+```
 ```
 
 ## Usage
