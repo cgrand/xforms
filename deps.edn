@@ -25,4 +25,8 @@
 
   :kaocha
   {:extra-deps {lambdaisland/kaocha {:mvn/version "1.69.1069"}}
-   :main-opts ["-m" "kaocha.runner"]}}}
+   :main-opts ["-m" "kaocha.runner"]}
+
+  :cljs-test-runner
+  {:extra-deps {olical/cljs-test-runner {:mvn/version "3.8.0"}}
+   :main-opts ["-m" "cljs-test-runner.main"]}}}

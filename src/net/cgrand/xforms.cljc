@@ -7,11 +7,17 @@
       :clj (:require [net.cgrand.macrovich :as macros]))
   (:refer-clojure :exclude [some reduce reductions into count for partition
                             str last keys vals min max drop-last take-last
-                            sort sort-by time satisfies?])
+                            sort sort-by time #?@(:bb [] :clj [satisfies?])])
   (:require [#?(:clj clojure.core :cljs cljs.core) :as core]
     [net.cgrand.xforms.rfs :as rf]
             #?(:clj [clojure.core.protocols]))
   #?(:cljs (:import [goog.structs Queue])))
+
+(defn- pair? [x] (and (vector? x) (= 2 (core/count x))))
+(let [kw-or-& #(or (keyword? %) (= '& %))]
+  (defn destructuring-pair? [x]
+    (and (pair? x)
+         (not (kw-or-& (first x))))))
 
 (macros/deftime
 
@@ -27,12 +33,6 @@
      (if (reduced? x#)
        x#
        (unreduced-> (-> x# ~expr) ~@exprs)))))
-
-(defn- pair? [x] (and (vector? x) (= 2 (core/count x))))
-(let [kw-or-& #(or (keyword? %) (= '& %))]
-  (defn- destructuring-pair? [x]
-    (and (pair? x)
-         (not (kw-or-& (first x))))))
 
 (defmacro for
  "Like clojure.core/for with the first expression being replaced by % (or _). Returns a transducer.
@@ -130,12 +130,7 @@
 
 ;; Workaround clojure.core/satisfies? being slow in Clojure
 ;; see https://ask.clojure.org/index.php/3304/make-satisfies-as-fast-as-a-protocol-method-call
-#?(:cljs
-   (def satisfies? core/satisfies?)
-
-   :bb
-   (def satisfies? core/satisfies?)
-
+#?(:bb nil
    :clj
    (defn fast-satisfies?-fn
      "Ported from https://github.com/clj-commons/manifold/blob/37658e91f836047a630586a909a2e22debfbbfc6/src/manifold/utils.clj#L77-L89"
@@ -155,7 +150,7 @@
 
 #?(:cljs
    (defn kvreducible? [coll]
-     (satisfies? core/IKVReduce coll))
+     (satisfies? IKVReduce coll))
 
    :clj
    (let [satisfies-ikvreduce? #?(:bb #(satisfies? clojure.core.protocols/IKVReduce %)

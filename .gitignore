@@ -17,5 +17,6 @@ pom.xml.asc
 .nrepl-port
 .cpcache/
 .clj-kondo/*/
+/cljs-test-runner-out/
 
 # End of https://www.toptal.com/developers/gitignore/api/clojure

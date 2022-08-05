@@ -97,41 +97,42 @@
 
 #?(:bb nil ;; babashka doesn't currently support calling iterator on range type
    :clj
-    (deftest iterator
-      (is (true? (.hasNext (x/iterator x/count (.iterator ^java.lang.Iterable (range 5))))))
-      (is (is (= [5] (iterator-seq (x/iterator x/count (.iterator ^java.lang.Iterable (range 5)))))))
-      (is (= [[0 1] [1 2] [2 3] [3 4] [4]] (iterator-seq (x/iterator (x/partition 2 1 nil) (.iterator ^java.lang.Iterable (range 5)))))))
-    
-    (deftest window-by-time
-      (is (= (into 
-               []
-               (x/window-by-time :ts 4
-                 (fn 
-                   ([] clojure.lang.PersistentQueue/EMPTY)
-                   ([q] (vec q))
-                   ([q x] (conj q x)))
-                 (fn [q _] (pop q)))
-               (map (fn [x] {:ts x}) (concat (range 0 2 0.5) (range 3 5 0.25))))
-             [[{:ts 0}] ; t =  0
-      [{:ts 0}] ; t =  0.25
-      [{:ts 0} {:ts 0.5}] ; t =  0.5
-      [{:ts 0} {:ts 0.5}] ; t =  0.75
-      [{:ts 0.5} {:ts 1.0}] ; t =  1.0
-      [{:ts 0.5} {:ts 1.0}] ; t =  1.25
-      [{:ts 1.0} {:ts 1.5}] ; t =  1.5
-      [{:ts 1.0} {:ts 1.5}] ; t =  1.75
-      [{:ts 1.5}] ; t =  2.0
-      [{:ts 1.5}] ; t =  2.25
-      [] ; t =  2.5
-      [] ; t =  2.75
-      [{:ts 3}] ; t =  3.0
-      [{:ts 3} {:ts 3.25}] ; t =  3.25
-      [{:ts 3} {:ts 3.25} {:ts 3.5}] ; t =  3.5
-      [{:ts 3} {:ts 3.25} {:ts 3.5} {:ts 3.75}] ; t =  3.75
-      [{:ts 3.25} {:ts 3.5} {:ts 3.75} {:ts 4.0}] ; t =  4.0
-      [{:ts 3.5} {:ts 3.75} {:ts 4.0} {:ts 4.25}] ; t =  4.25
-      [{:ts 3.75} {:ts 4.0} {:ts 4.25} {:ts 4.5}] ; t =  4.5
-      [{:ts 4.0} {:ts 4.25} {:ts 4.5} {:ts 4.75}]])))) ; t =  4.75
+   (do
+     (deftest iterator
+       (is (true? (.hasNext (x/iterator x/count (.iterator ^java.lang.Iterable (range 5))))))
+       (is (is (= [5] (iterator-seq (x/iterator x/count (.iterator ^java.lang.Iterable (range 5)))))))
+       (is (= [[0 1] [1 2] [2 3] [3 4] [4]] (iterator-seq (x/iterator (x/partition 2 1 nil) (.iterator ^java.lang.Iterable (range 5)))))))
+
+     (deftest window-by-time
+       (is (= (into
+                []
+                (x/window-by-time :ts 4
+                                  (fn
+                                    ([] clojure.lang.PersistentQueue/EMPTY)
+                                    ([q] (vec q))
+                                    ([q x] (conj q x)))
+                                  (fn [q _] (pop q)))
+                (map (fn [x] {:ts x}) (concat (range 0 2 0.5) (range 3 5 0.25))))
+              [[{:ts 0}] ; t =  0
+               [{:ts 0}] ; t =  0.25
+               [{:ts 0} {:ts 0.5}] ; t =  0.5
+               [{:ts 0} {:ts 0.5}] ; t =  0.75
+               [{:ts 0.5} {:ts 1.0}] ; t =  1.0
+               [{:ts 0.5} {:ts 1.0}] ; t =  1.25
+               [{:ts 1.0} {:ts 1.5}] ; t =  1.5
+               [{:ts 1.0} {:ts 1.5}] ; t =  1.75
+               [{:ts 1.5}] ; t =  2.0
+               [{:ts 1.5}] ; t =  2.25
+               [] ; t =  2.5
+               [] ; t =  2.75
+               [{:ts 3}] ; t =  3.0
+               [{:ts 3} {:ts 3.25}] ; t =  3.25
+               [{:ts 3} {:ts 3.25} {:ts 3.5}] ; t =  3.5
+               [{:ts 3} {:ts 3.25} {:ts 3.5} {:ts 3.75}] ; t =  3.75
+               [{:ts 3.25} {:ts 3.5} {:ts 3.75} {:ts 4.0}] ; t =  4.0
+               [{:ts 3.5} {:ts 3.75} {:ts 4.0} {:ts 4.25}] ; t =  4.25
+               [{:ts 3.75} {:ts 4.0} {:ts 4.25} {:ts 4.5}] ; t =  4.5
+               [{:ts 4.0} {:ts 4.25} {:ts 4.5} {:ts 4.75}]]))))) ; t =  4.75
 
 (deftest do-not-kvreduce-vectors
   (is (= {0 nil 1 nil} (x/into {} (x/for [[k v] %] [k v]) [[0] [1]])))

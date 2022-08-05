@@ -2,28 +2,47 @@
  :paths ["src" "test"]
 
  :tasks
- {:init
+ {:requires ([clojure.string :as str])
+
+  :init
   (do
     (defn kaocha [alias args]
-      (apply shell "bin/kaocha" alias args)))
+      (apply shell "bin/kaocha" alias args))
 
-  test-9
+    (defn test-cljs [alias args]
+      (apply clojure (str/join ["-M:test:cljs-test-runner" alias]) args)))
+
+  test-clj-9
   {:task (kaocha :clj-1-9 *command-line-args*)}
 
-  test-10
+  test-clj-10
   {:task (kaocha :clj-1-10 *command-line-args*)}
 
-  test-11
+  test-clj-11
   {:task (kaocha :clj-1-11 *command-line-args*)}
 
   test-clj
-  {:task (doseq [alias [:clj-1-9 :clj-1-10 :clj-1-11]]
-           (kaocha alias *command-line-args*))}
+  {:depends [test-clj-9 test-clj-10 test-clj-11]}
+
+  test-cljs-9
+  {:task (test-cljs :clj-1-9 *command-line-args*)}
+
+  test-cljs-10
+  {:task (test-cljs :clj-1-10 *command-line-args*)}
+
+  test-cljs-11
+  {:task (test-cljs :clj-1-11 *command-line-args*)}
+
+  test-cljs
+  {:depends [#_test-cljs-9 test-cljs-10 test-cljs-11]}
 
   test-bb
   {:requires ([clojure.test :as t]
               [net.cgrand.xforms-test])
    :task (t/run-tests 'net.cgrand.xforms-test)}
+
+  test-all
+  {:depends [test-bb test-clj test-cljs]}
 
   perf-bb
   {:requires ([net.cgrand.xforms :as x])
