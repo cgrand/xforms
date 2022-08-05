@@ -506,6 +506,23 @@
   
   )
 
+#?(:cljs
+   (defn ^:private fn->comparator
+     "Given a fn that might be boolean valued or a comparator,
+      return a fn that is a comparator.
+
+      Copied from cljs.core: https://github.com/clojure/clojurescript/blob/95c5cf384a128503b072b7b1916af1a1d5c8871c/src/main/cljs/cljs/core.cljs#L2459-L2471"
+     [f]
+     (if (= f compare)
+       compare
+       (fn [x y]
+         (let [r (f x y)]
+           (if (number? r)
+             r
+             (if r
+               -1
+               (if (f y x) 1 0))))))))
+
 (defn sort
   ([] (sort compare))
   ([cmp]
@@ -513,7 +530,7 @@
       (let [buf #?(:clj (java.util.ArrayList.) :cljs #js [])]
         (fn
           ([] (rf))
-          ([acc] (rf (core/reduce rf acc (doto buf #?(:clj (java.util.Collections/sort cmp) :cljs (.sort cmp))))))
+          ([acc] (rf (core/reduce rf acc (doto buf #?(:clj (java.util.Collections/sort cmp) :cljs (.sort (fn->comparator cmp)))))))
           ([acc x] (#?(:clj .add :cljs .push) buf x) acc))))))
 
 (defn sort-by

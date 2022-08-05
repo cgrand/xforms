@@ -140,9 +140,11 @@
 
 (deftest sorting
   (is (= (range 100) (x/into [] (x/sort) (shuffle (range 100)))))
+  (is (= (range 100) (x/into [] (x/sort <) (shuffle (range 100)))))
   (is (= (reverse (range 100)) (x/into [] (x/sort >) (shuffle (range 100)))))
   (is (= (sort-by str (range 100)) (x/into [] (x/sort-by str) (shuffle (range 100)))))
-  (is (= (sort-by str (comp - compare) (range 100)) (x/into [] (x/sort-by str (comp - compare)) (shuffle (range 100))))))
+  (is (= (sort-by str (comp - compare) (range 100)) (x/into [] (x/sort-by str (comp - compare)) (shuffle (range 100)))))
+  (is (= (sort-by identity > (shuffle (range 100))) (x/into [] (x/sort-by identity >) (shuffle (range 100))))))
 
 (deftest destructuring-pair?
   (let [destructuring-pair? #'x/destructuring-pair?]
