@@ -37,7 +37,7 @@ In `net.cgrand.xforms.io`:
 
 ## Add as a dependency
 
-For specific coordinates see the [latest release](/releases/latest).
+For specific coordinates see the [Releases](https://github.com/cgrand/xforms/releases) page.
 
 ## Usage
 
