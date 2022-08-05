@@ -230,6 +230,11 @@ Evaluation count : 24 in 6 samples of 4 calls.
 
 ## Changelog
 
+### 0.19.4
+
+ * Fix ClojureScript compilation broken in `0.19.3` #49
+ * Fix `x/sort` and `x/sort-by` for ClojureScript #40
+
 ### 0.19.3
 
  * Add `deps.edn` to enable usage as a [git library](https://clojure.org/guides/deps_and_cli#_using_git_libraries)
