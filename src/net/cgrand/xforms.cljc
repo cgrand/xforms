@@ -111,30 +111,19 @@
                                                                          :cljs [k# v#]
                                                                          :cljd (MapEntry k# v#))] ~@body)))))
                     (not (arities 2)) (conj (let [[[acc karg varg] & body] (arities 3)]
-                                              `([~acc [~karg ~varg]] ~@body))))
-        fn-bodies
-        (core/for [[[acc x :as args] & body :as fn-body] fn-bodies]
-          (if (and (= 2 (core/count args)) (vector? x))
-            `([~acc x#] (let [~x x#] ~@body))
-            fn-body))]
+                                              `([~acc [~karg ~varg]] ~@body))))]
     `(reify
        #?@(:bb [] ;; babashka currently only supports reify with one Java interface at a time
            :default [~@(macros/case :cljd '[cljd.core/Fn] :clj '[clojure.lang.Fn])])
        KvRfable
-       (some-kvrf [this#] this#)
+       (~'some-kvrf [this#] this#)
        ~(macros/case :cljs `core/IFn :clj 'clojure.lang.IFn :cljd 'cljd.core/IFn)
-       #_~@(map (fn [[args & body]]
-                (list* 'cljd.core/-invoke (core/into [name] args) body))
-           #_'[([f] 0) ([f a] 1) ([f a b] 2) ([f a b c] 3)]
-           fn-bodies
-           #_(throw (ex-info "CACA" {:dc fn-bodies})))
-
        ~@(core/for [[args & body] fn-bodies]
            (let [nohint-args (map (fn [arg] (if (:tag (meta arg)) (gensym 'arg) arg)) args)
                  rebind (mapcat (fn [arg nohint]
                                   (when-not (= arg nohint) [arg nohint])) args nohint-args)]
-               `(~(macros/case :cljd 'cljd.core/-invoke :cljs `core/-invoke :clj 'invoke)
-                  [~name ~@nohint-args] ~@(if (seq rebind) [`(let [~@rebind] ~@body)] body)))))))
+             `(~(macros/case :cljd '-invoke :cljs `core/-invoke :clj 'invoke)
+               [~name ~@nohint-args] ~@(if (seq rebind) [`(let [~@rebind] ~@body)] body)))))))
 
 (defmacro ^:private let-complete [[binding volatile] & body]
   `(let [v# @~volatile]

@@ -92,10 +92,10 @@
 (defn avg
   "Reducing fn to compute the arithmetic mean."
   ([] nil)
-  ([#?(:cljd ^{:tag #/(List double)} acc :clj ^doubles acc :cljs ^doubles acc)]
+  ([#?(:cljd ^{:tag #/(List? double)} acc :clj ^doubles acc :cljs ^doubles acc)]
    (when acc (/ (aget acc 1) (aget acc 0))))
   ([acc x] (avg acc x 1))
-  ([#?(:cljd ^{:tag #/(List double)} acc :clj ^doubles acc :cljs ^doubles acc) x w]
+  ([#?(:cljd ^{:tag #/(List? double)} acc :clj ^doubles acc :cljs ^doubles acc) x w]
     (let [acc (or acc #?(:cljd (double-array 2) :clj (double-array 2) :cljs #js [0.0 0.0]))]
       (doto acc
         (aset 0 (+ (aget acc 0) w))
@@ -137,11 +137,10 @@
   ([sb] (or-instance? #?(:cljd StringBuffer  :clj StringBuilder :cljs StringBuffer) sb
           (#?(:cljd StringBuffer :clj StringBuilder. :cljs StringBuffer.) (core/str sb))))
   ; the instance? checks are for compatibility with str in case of seeded reduce/transduce.
-  ([sb x] (#?(:cljd .write :default .append)
-            (or-instance?
-              #?(:cljd StringBuffer :clj StringBuilder :cljs StringBuffer) sb
-              (#?(:cljd StringBuffer :clj StringBuilder. :cljs StringBuffer.) (core/str sb)))
-            x)))
+  ([sb x] (doto (or-instance?
+                  #?(:cljd StringBuffer :clj StringBuilder :cljs StringBuffer) sb
+                  (#?(:cljd StringBuffer :clj StringBuilder. :cljs StringBuffer.) (core/str sb)))
+            (#?(:cljd .write :default .append) x))))
 
 (def str
   "Reducing function to build strings in linear time. Acts as replacement for clojure.core/str in a reduce/transduce call."
