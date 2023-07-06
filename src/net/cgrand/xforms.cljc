@@ -4,24 +4,31 @@
   #?(:cljs (:require-macros
              [net.cgrand.macrovich :as macros]
              [net.cgrand.xforms :refer [for kvrf let-complete]])
-      :clj (:require [net.cgrand.macrovich :as macros]))
+      :default (:require [net.cgrand.macrovich :as macros]))
   (:refer-clojure :exclude [some reduce reductions into count for partition
                             str last keys vals min max drop-last take-last
-                            sort sort-by time #?@(:bb [] :clj [satisfies?])])
-  (:require [#?(:clj clojure.core :cljs cljs.core) :as core]
-    [net.cgrand.xforms.rfs :as rf]
-            #?(:clj [clojure.core.protocols]))
+                            sort sort-by time #?@(:bb [] :cljd/clj-host [] :clj [satisfies?])])
+  (:require [#?(:cljd cljd.core :clj clojure.core :cljs cljs.core) :as core]
+            [net.cgrand.xforms.rfs :as rf]
+            #?@(:cljd [["dart:collection" :as dart:coll]] :clj [[clojure.core.protocols]] :cljs []))
+  #?(:cljd/clj-host
+     ; customize the clj/jvm ns used for macroexpansion
+     (:host-ns (:require [clojure.core :as core]
+                         [net.cgrand.macrovich :as macros])))
   #?(:cljs (:import [goog.structs Queue])))
 
-(defn- pair? [x] (and (vector? x) (= 2 (core/count x))))
-(let [kw-or-& #(or (keyword? %) (= '& %))]
-  (defn destructuring-pair? [x]
-    (and (pair? x)
-         (not (kw-or-& (first x))))))
+(defn- ^:macro-support pair? [x] (and (vector? x) (= 2 (core/count x))))
+(def ^:macro-support destructuring-pair?
+  (let [kw-or-& #(or (keyword? %) (= '& %))]
+    (fn [x]
+      (and (pair? x)
+        (not (kw-or-& (first x)))))))
+
+
 
 (macros/deftime
 
-(defn- no-user-meta? [x]
+(defn- ^:macro-support no-user-meta? [x]
   (= {} (dissoc (or (meta x) {}) :file :line :column :end-line :end-column)))
 
 (defmacro unreduced->
@@ -54,10 +61,10 @@
                                     (let [body-rf (gensym 'body-rf)]
                                       (if (and (destructuring-pair? binding) (every? vector? expr))
                                         `(let [~body-rf (fn [~acc ~@binding] ~body)]
-                                           (unreduced (unreduced-> ~acc 
+                                           (unreduced (unreduced-> ~acc
                                                         ~@(map (fn [[k v]] `(~body-rf ~k ~v)) expr))))
                                         `(let [~body-rf (fn [~acc ~binding] ~body)]
-                                           (unreduced (unreduced-> ~acc 
+                                           (unreduced (unreduced-> ~acc
                                                         ~@(map (fn [v] `(~body-rf ~v)) expr))))))
                                     (if (destructuring-pair? binding)
                                       `(let [expr# ~expr]
@@ -67,7 +74,7 @@
                                       `(core/reduce (fn [~acc ~binding] ~body) ~acc ~expr)))))
                    init rpairs))
          nested-reduceds (core/for [[expr binding] rpairs
-                                    :when (not (keyword? binding))] 
+                                    :when (not (keyword? binding))]
                            `reduced)
          body (build `(let [acc# (~rf ~acc ~@(if (and (pair? body-expr) (no-user-meta? body-expr))
                                                body-expr
@@ -82,7 +89,7 @@
             ([~acc] (~rf ~acc))
             ([~acc ~binding] ~body)))))))
 
-(defn- arity [[arglist & body :as fn-body]]
+(defn- ^:macro-support arity [[arglist & body :as fn-body]]
   (let [[fixargs varargs] (split-with (complement #{'&}) arglist)]
     (if (seq varargs) (zipmap (range (core/count fixargs) 4) (repeat fn-body)))
     {(core/count fixargs) fn-body}))
@@ -98,20 +105,36 @@
                                               (if (destructuring-pair? arg)
                                                 (let [[karg varg] arg]
                                                   `([~acc ~karg ~varg] ~@body))
-                                                `([~acc k# v#] (let [~arg (macros/case :clj (clojure.lang.MapEntry. k# v#) :cljs [k# v#])] ~@body)))))
+                                                `([~acc k# v#] (let [~arg
+                                                                     (macros/case
+                                                                         :clj (clojure.lang.MapEntry. k# v#)
+                                                                         :cljs [k# v#]
+                                                                         :cljd (MapEntry k# v#))] ~@body)))))
                     (not (arities 2)) (conj (let [[[acc karg varg] & body] (arities 3)]
-                                              `([~acc [~karg ~varg]] ~@body))))]
+                                              `([~acc [~karg ~varg]] ~@body))))
+        fn-bodies
+        (core/for [[[acc x :as args] & body :as fn-body] fn-bodies]
+          (if (and (= 2 (core/count args)) (vector? x))
+            `([~acc x#] (let [~x x#] ~@body))
+            fn-body))]
     `(reify
        #?@(:bb [] ;; babashka currently only supports reify with one Java interface at a time
-           :default [~@(macros/case :clj '[clojure.lang.Fn])])
+           :default [~@(macros/case :cljd '[cljd.core/Fn] :clj '[clojure.lang.Fn])])
        KvRfable
        (some-kvrf [this#] this#)
-       ~(macros/case :cljs `core/IFn :clj 'clojure.lang.IFn)
+       ~(macros/case :cljs `core/IFn :clj 'clojure.lang.IFn :cljd 'cljd.core/IFn)
+       #_~@(map (fn [[args & body]]
+                (list* 'cljd.core/-invoke (core/into [name] args) body))
+           #_'[([f] 0) ([f a] 1) ([f a b] 2) ([f a b c] 3)]
+           fn-bodies
+           #_(throw (ex-info "CACA" {:dc fn-bodies})))
+
        ~@(core/for [[args & body] fn-bodies]
            (let [nohint-args (map (fn [arg] (if (:tag (meta arg)) (gensym 'arg) arg)) args)
                  rebind (mapcat (fn [arg nohint]
                                   (when-not (= arg nohint) [arg nohint])) args nohint-args)]
-             `(~(macros/case :cljs `core/-invoke :clj 'invoke) [~name ~@nohint-args] ~@(if (seq rebind) [`(let [~@rebind] ~@body)] body)))))))
+               `(~(macros/case :cljd 'cljd.core/-invoke :cljs `core/-invoke :clj 'invoke)
+                  [~name ~@nohint-args] ~@(if (seq rebind) [`(let [~@rebind] ~@body)] body)))))))
 
 (defmacro ^:private let-complete [[binding volatile] & body]
   `(let [v# @~volatile]
@@ -131,6 +154,7 @@
 ;; Workaround clojure.core/satisfies? being slow in Clojure
 ;; see https://ask.clojure.org/index.php/3304/make-satisfies-as-fast-as-a-protocol-method-call
 #?(:bb nil
+   :cljd nil
    :clj
    (defn fast-satisfies?-fn
      "Ported from https://github.com/clj-commons/manifold/blob/37658e91f836047a630586a909a2e22debfbbfc6/src/manifold/utils.clj#L77-L89"
@@ -147,10 +171,13 @@
                val)
              val))))))
 
-
 #?(:cljs
    (defn kvreducible? [coll]
      (satisfies? IKVReduce coll))
+
+   :cljd
+   (defn kvreducible? [coll]
+     (satisfies? cljd.core/IKVReduce coll))
 
    :clj
    (let [satisfies-ikvreduce? #?(:bb #(satisfies? clojure.core.protocols/IKVReduce %)
@@ -163,7 +190,7 @@
 
 
 (extend-protocol KvRfable
-  #?(:clj Object :cljs default) (some-kvrf [_] nil)
+  #?(:cljd fallback :clj Object :cljs default) (some-kvrf [_] nil)
   #?@(:clj [nil (some-kvrf [_] nil)]))
 
 (defn ensure-kvrf [rf]
@@ -197,8 +224,9 @@
 
 (defn- into-rf [to]
   (cond
-    #?(:clj (instance? clojure.lang.IEditableCollection to)
-        :cljs (satisfies? IEditableCollection to))
+    #?(:cljd (satisfies? cljd.core/IEditableCollection to)
+       :clj (instance? clojure.lang.IEditableCollection to)
+       :cljs (satisfies? IEditableCollection to))
     (if (map? to)
       (kvrf
         ([] (transient to))
@@ -235,8 +263,9 @@
 
 (defn- without-rf [from]
   (cond
-    #?(:clj (instance? clojure.lang.IEditableCollection from)
-        :cljs (satisfies? IEditableCollection from))
+    #?(:cljd (satisfies? cljd.core/IEditableCollection from)
+       :clj (instance? clojure.lang.IEditableCollection from)
+       :cljs (satisfies? IEditableCollection from))
     (if (map? from)
       (fn
         ([] (transient from))
@@ -287,7 +316,7 @@
 
 (defn str
   "When used as a value, it's an aggregating transducer that concatenates input values
-   into a single output value. 
+   into a single output value.
    When used as a function of two args (xform and coll) it's a transducing context that
    concatenates all values in a string."
   {:arglists '([xform coll])}
@@ -326,7 +355,7 @@
     ([acc] (rf acc))
     ([acc k v] (rf acc k))))
 
-;; for both map entries and vectors 
+;; for both map entries and vectors
 (defn- key' [kv] (nth kv 0))
 (defn- val' [kv] (nth kv 1))
 
@@ -410,32 +439,36 @@
   (comp (apply by-key by-key-args) (into coll)))
 
 (macros/replace
-  [#?(:cljs {(java.util.ArrayDeque. n) (Queue.)
+  [#?(:cljd {(java.util.ArrayDeque. n) (dart:coll/Queue)
+             .add .add
+             .poll .removeFirst
+             .size .-length})
+   #?(:cljs {(java.util.ArrayDeque. n) (Queue.)
              .add .enqueue
              .poll .dequeue
              .size .getCount})
    #?(:clj {(.getValues dq) dq})]
-  
+
   (defn partition
-    "Returns a partitioning transducer. Each partition is independently transformed using the xform transducer."
-    ([n]
-      (partition n n (into [])))
-    ([n step-or-xform]
-      (if (fn? step-or-xform)
-        (partition n n step-or-xform)
-        (partition n step-or-xform (into []))))
-    ([^long n step pad-or-xform]
-      (if (fn? pad-or-xform)
-        (let [xform pad-or-xform]
-          (fn [rf]
-            (let [mxrf (multiplexable rf)
-                  dq (java.util.ArrayDeque. n)
-                  barrier (volatile! n)
-                  xform (comp (map #(if (identical? dq %) nil %)) xform)]
-              (fn
-                ([] (rf))
-                ([acc] (.clear dq) (rf acc))
-                ([acc x]
+      "Returns a partitioning transducer. Each partition is independently transformed using the xform transducer."
+      ([n]
+       (partition n n (into [])))
+      ([n step-or-xform]
+       (if (fn? step-or-xform)
+         (partition n n step-or-xform)
+         (partition n step-or-xform (into []))))
+    ([#?(:cljd ^int n :default ^long n) step pad-or-xform]
+       (if (fn? pad-or-xform)
+         (let [xform pad-or-xform]
+           (fn [rf]
+             (let [mxrf (multiplexable rf)
+                   dq (java.util.ArrayDeque. n)
+                   barrier (volatile! n)
+                   xform (comp (map #(if (identical? dq %) nil %)) xform)]
+               (fn
+                 ([] (rf))
+                 ([acc] (.clear dq) (rf acc))
+                 ([acc x]
                   (let [b (vswap! barrier dec)]
                     (when (< b n) (.add dq (if (nil? x) dq x)))
                     (if (zero? b)
@@ -445,24 +478,24 @@
                         (vswap! barrier + step)
                         acc)
                       acc)))))))
-        (partition n step pad-or-xform (into []))))
-    ([^long n step pad xform]
-      (fn [rf]
-        (let [mxrf (multiplexable rf)
-              dq (java.util.ArrayDeque. n)
-              barrier (volatile! n)
-              xform (comp (map #(if (identical? dq %) nil %)) xform)]
-          (fn
-            ([] (rf))
-            ([acc] (if (< @barrier n)
-                     (let [xform (comp cat (take n) xform)
-                           ; don't use mxrf for completion: we want completion and don't want reduced-wrapping 
-                           acc (transduce xform rf acc [(.getValues dq) pad])]
-                       (vreset! barrier n)
-                       (.clear dq)
-                       acc)
-                     (rf acc)))
-            ([acc x]
+         (partition n step pad-or-xform (into []))))
+      ([#?(:cljd ^int n :default ^long n) step pad xform]
+       (fn [rf]
+         (let [mxrf (multiplexable rf)
+               dq (java.util.ArrayDeque. n)
+               barrier (volatile! n)
+               xform (comp (map #(if (identical? dq %) nil %)) xform)]
+           (fn
+             ([] (rf))
+             ([acc] (if (< @barrier n)
+                      (let [xform (comp cat (take n) xform)
+                            ; don't use mxrf for completion: we want completion and don't want reduced-wrapping
+                            acc (transduce xform rf acc [(.getValues dq) pad])]
+                        (vreset! barrier n)
+                        (.clear dq)
+                        acc)
+                      (rf acc)))
+             ([acc x]
               (let [b (vswap! barrier dec)]
                 (when (< b n) (.add dq (if (nil? x) dq x)))
                 (if (zero? b)
@@ -472,12 +505,12 @@
                     (vswap! barrier + step)
                     acc)
                   acc))))))))
-  
+
   #_(defn zip [xform1 xform2]
      (fn [rf]
        (let )))
-  
-  (defn take-last [^long n]
+
+  (defn take-last [#?(:cljd ^int n :default ^long n)]
     (fn [rf]
       (let [dq (java.util.ArrayDeque. n)]
         (fn
@@ -487,10 +520,10 @@
             (.add dq (if (nil? x) dq x))
             (when (< n (.size dq)) (.poll dq))
             acc)))))
-  
-  (defn drop-last 
+
+  (defn drop-last
     ([] (drop-last 1))
-    ([^long n]
+    ([#?(:cljd ^int n :default ^long n)]
       (fn [rf]
         (let [dq (java.util.ArrayDeque. n)
               xform (map #(if (identical? dq %) nil %))
@@ -500,10 +533,10 @@
             ([acc] (rf acc))
             ([acc x]
               (.add dq (if (nil? x) dq x))
-              (if (< n (.size dq)) 
+              (if (< n (.size dq))
                 (rf acc (.poll dq))
                 acc)))))))
-  
+
   )
 
 #?(:cljs
@@ -527,17 +560,20 @@
   ([] (sort compare))
   ([cmp]
     (fn [rf]
-      (let [buf #?(:clj (java.util.ArrayList.) :cljs #js [])]
+      (let [buf #?(:cljd #dart [] :clj (java.util.ArrayList.) :cljs #js [])]
         (fn
           ([] (rf))
-          ([acc] (rf (core/reduce rf acc (doto buf #?(:clj (java.util.Collections/sort cmp) :cljs (.sort (fn->comparator cmp)))))))
-          ([acc x] (#?(:clj .add :cljs .push) buf x) acc))))))
+          ([acc] (rf (core/reduce rf acc (doto buf #?(:cljd (.sort (dart-comparator cmp))
+                                                      :clj (java.util.Collections/sort cmp)
+                                                      :cljs (.sort (fn->comparator cmp)))))))
+          ([acc x] (#?(:cljd .add :clj .add :cljs .push) buf x) acc))))))
 
 (defn sort-by
   ([kfn] (sort-by kfn compare))
   ([kfn cmp]
     (sort (fn [a b]
-            #?(:clj (.compare ^java.util.Comparator cmp (kfn a) (kfn b))
+            #?(:cljd (cmp (kfn a) (kfn b))
+               :clj (.compare ^java.util.Comparator cmp (kfn a) (kfn b))
                :cljs (cmp (kfn a) (kfn b)))))))
 
 (defn reductions
@@ -580,7 +616,7 @@
    If you don't want to see the accumulator until the window is full then you need to
    use (drop (dec n)) to remove them.
 
-   If you don't have an inverse function, consider using partition and reduce: 
+   If you don't have an inverse function, consider using partition and reduce:
    (x/partition 4 (x/reduce rf))"
   [n f invf]
   (fn [rf]
@@ -603,7 +639,8 @@
                 (vreset! vi (let [i (inc i)] (if (= n i) 0 i)))
                 (rf acc (f (vreset! vwacc (f (invf wacc x') x))))))))))))
 
-#?(:clj
+#?(:cljd nil
+   :clj
     (defn iterator
       "Iterator transducing context, returns an iterator on the transformed data.
        Equivalent to (.iterator (eduction xform (iterator-seq src-iterator))) except there's is no buffering on values (as in iterator-seq),
@@ -617,11 +654,11 @@
                            (and @vopen
                              (if (.hasNext src-iterator)
                                (let [acc (rf nil (.next src-iterator))]
-                                 (when (reduced? acc) 
+                                 (when (reduced? acc)
                                    (rf nil)
                                    (vreset! vopen false))
                                  (recur))
-                               (do 
+                               (do
                                  (rf nil)
                                  (vreset! vopen false)
                                  (recur)))))]
@@ -634,11 +671,12 @@
                 (if (identical? NULL x) nil x))
               (throw (java.util.NoSuchElementException.))))))))
 
-#?(:clj
+#?(:cljd nil
+   :clj
     (defn window-by-time
       "ALPHA
    Returns a transducer which computes a windowed accumulator over chronologically sorted items.
-   
+
    timef is a function from one item to its scaled timestamp (as a double). The window length is always 1.0
    so timef must normalize timestamps. For example if timestamps are in seconds (and under the :ts key),
    to get a 1-hour window you have to use (fn [x] (/ (:ts x) 3600.0)) as timef.
@@ -647,8 +685,8 @@
 
    f and invf work like in #'window."
       ([timef n f]
-        (window-by-time timef n 
-          (fn 
+        (window-by-time timef n
+          (fn
             ([] clojure.lang.PersistentQueue/EMPTY)
             ([q] (f (core/reduce f (f) q)))
             ([q x] (conj q x)))
@@ -700,11 +738,11 @@
   "Count the number of items. Either used directly as a transducer or invoked with two args
    as a transducing context."
   ([rf]
-    (let [n #?(:clj (java.util.concurrent.atomic.AtomicLong.) :cljs (atom 0))]
+    (let [n #?(:cljd (volatile! 0) :clj (java.util.concurrent.atomic.AtomicLong.) :cljs (volatile! 0))]
       (fn
         ([] (rf))
-        ([acc] (rf (unreduced (rf acc #?(:clj (.get n) :cljs @n)))))
-        ([acc _] #?(:clj (.incrementAndGet n) :cljs (swap! n inc)) acc))))
+        ([acc] (rf (unreduced (rf acc #?(:cljd @n :clj (.get n) :cljs @n)))))
+        ([acc _] #?(:cljd (vswap! n inc) :clj (.incrementAndGet n) :cljs (vswap! n inc)) acc))))
   ([xform coll]
     (transduce (comp xform count) rf/last coll)))
 
@@ -777,7 +815,7 @@
    When xforms-map is a sequential collection returns a vector of same length as xforms-map.
    Returns a transducer when coll is omitted."
   ([xforms-map]
-    (let [collect-xform (if (map? xforms-map) 
+    (let [collect-xform (if (map? xforms-map)
                           (into {})
                           (reduce (kvrf
                                     ([] (core/reduce (fn [v _] (conj! v nil))
@@ -797,44 +835,46 @@
              (.addAndGet at (- t (System/nanoTime))) (swap! at + (- t (system-time)))
              (.addAndGet at (- (System/nanoTime) t)) (swap! at + (- (system-time) t))
              .size .getCount})]
-  
-  (defn time
-    "Measures the time spent in this transformation and prints the measured time.
+
+  #?(:cljd nil
+     :default
+     (defn time
+       "Measures the time spent in this transformation and prints the measured time.
    tag-or-f may be either a function of 1 argument (measured time in ms) in which case
    this function will be called instead of printing, or tag-or-f will be print before the measured time."
-    ([xform] (time "Elapsed time" xform))
-    ([tag-or-f xform]
-      (let [pt (if (fn? tag-or-f)
-                 tag-or-f
-                 #(println (core/str tag-or-f ": " % " msecs")))]
-        (fn [rf]
-          (let [at (java.util.concurrent.atomic.AtomicLong.)
-                rf
-                (fn
-                  ([] (rf))
-                  ([acc] (let [t (System/nanoTime)
-                               r (rf acc)]
-                           (.addAndGet at (- t (System/nanoTime)))
-                           r))
-                  ([acc x] 
-                    (let [t (System/nanoTime) 
-                          r (rf acc x)]
-                      (.addAndGet at (- t (System/nanoTime)))
-                      r)))
-                rf (xform rf)]
-            (fn 
-              ([] (rf))
-              ([acc]
-                (let [t (System/nanoTime)
-                      r (rf acc)
-                      total (.addAndGet at (- (System/nanoTime) t))]
-                  (pt #?(:clj (* total 1e-6) :cljs total))
-                  r))
-              ([acc x]
-                (let [t (System/nanoTime)
-                      r (rf acc x)]
-                  (.addAndGet at (- (System/nanoTime) t))
-                  r)))))))))
+       ([xform] (time "Elapsed time" xform))
+       ([tag-or-f xform]
+        (let [pt (if (fn? tag-or-f)
+                   tag-or-f
+                   #(println (core/str tag-or-f ": " % " msecs")))]
+          (fn [rf]
+            (let [at (java.util.concurrent.atomic.AtomicLong.)
+                  rf
+                  (fn
+                    ([] (rf))
+                    ([acc] (let [t (System/nanoTime)
+                                 r (rf acc)]
+                             (.addAndGet at (- t (System/nanoTime)))
+                             r))
+                    ([acc x]
+                     (let [t (System/nanoTime)
+                           r (rf acc x)]
+                       (.addAndGet at (- t (System/nanoTime)))
+                       r)))
+                  rf (xform rf)]
+              (fn
+                ([] (rf))
+                ([acc]
+                 (let [t (System/nanoTime)
+                       r (rf acc)
+                       total (.addAndGet at (- (System/nanoTime) t))]
+                   (pt #?(:clj (* total 1e-6) :cljs total))
+                   r))
+                ([acc x]
+                 (let [t (System/nanoTime)
+                       r (rf acc x)]
+                   (.addAndGet at (- (System/nanoTime) t))
+                   r))))))))))
 
 #_(defn rollup
    "Roll-up input data along the provided dimensions (which are functions of one input item),

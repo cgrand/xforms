@@ -5,6 +5,13 @@
  {:dev
   {:extra-paths ["dev"]}
 
+  :cljd
+  {:extra-deps
+   {tensegritics/clojuredart
+    {:local/root "../../../cljd/open-source/ClojureDart"}
+    #_{:git/url "https://github.com/tensegritics/ClojureDart.git"
+       :sha "ae1b485e84ccc35b122f776dfc7cc62198274701"}}}
+
   :clj-1-9
   {:extra-deps
    {org.clojure/clojure {:mvn/version "1.9.0"}
