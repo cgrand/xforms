@@ -95,7 +95,7 @@
   ([#?(:cljd ^{:tag #/(List? double)} acc :clj ^doubles acc :cljs ^doubles acc)]
    (when acc (/ (aget acc 1) (aget acc 0))))
   ([acc x] (avg acc x 1))
-  ([#?(:cljd ^{:tag #/(List? double)} acc :clj ^doubles acc :cljs ^doubles acc) x w]
+  ([#?(:cljd ^{:tag #/(List? double)} acc :clj ^doubles acc :cljs ^doubles acc) x w] ; weighted mean
     (let [acc (or acc #?(:cljd (double-array 2) :clj (double-array 2) :cljs #js [0.0 0.0]))]
       (doto acc
         (aset 0 (+ (aget acc 0) w))

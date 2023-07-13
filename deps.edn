@@ -1,4 +1,4 @@
-{:deps {net.cgrand/macrovich {:mvn/version "0.2.1"}}
+{:deps {net.cgrand/macrovich {:mvn/version "0.2.2"}}
  :paths ["src"]
 
  :aliases
@@ -8,8 +8,7 @@
   :cljd
   {:extra-deps
    {tensegritics/clojuredart
-    {:local/root "../../../cljd/open-source/ClojureDart"}
-    #_{:git/url "https://github.com/tensegritics/ClojureDart.git"
+    {:git/url "https://github.com/tensegritics/ClojureDart.git"
        :sha "ae1b485e84ccc35b122f776dfc7cc62198274701"}}}
 
   :clj-1-9
@@ -31,9 +30,15 @@
   {:extra-paths ["test"]}
 
   :kaocha
-  {:extra-deps {lambdaisland/kaocha {:mvn/version "1.69.1069"}}
+  {:extra-paths ["test"]
+   :extra-deps {lambdaisland/kaocha {:mvn/version "1.69.1069"}}
    :main-opts ["-m" "kaocha.runner"]}
 
   :cljs-test-runner
-  {:extra-deps {olical/cljs-test-runner {:mvn/version "3.8.0"}}
-   :main-opts ["-m" "cljs-test-runner.main"]}}}
+  {:extra-paths ["test"]
+   :extra-deps {olical/cljs-test-runner {:mvn/version "3.8.0"}}
+   :main-opts ["-m" "cljs-test-runner.main"]}
+
+  :build
+  {:deps {io.github.clojure/tools.build {:git/tag "v0.9.4" :git/sha "76b78fe"}}
+          :ns-default build}}}

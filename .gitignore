@@ -8,6 +8,9 @@ pom.xml.asc
 *.class
 /lib/
 /classes/
+/bin/
+/node_modules/
+/.lumo_cache/
 /target/
 /checkouts/
 .lein-deps-sum
