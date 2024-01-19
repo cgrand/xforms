@@ -105,11 +105,13 @@
                                               (if (destructuring-pair? arg)
                                                 (let [[karg varg] arg]
                                                   `([~acc ~karg ~varg] ~@body))
-                                                `([~acc k# v#] (let [~arg
-                                                                     (macros/case
-                                                                         :clj (clojure.lang.MapEntry. k# v#)
-                                                                         :cljs [k# v#]
-                                                                         :cljd (MapEntry k# v#))] ~@body)))))
+                                                (let [k (gensym "k__")
+                                                      v (gensym "v__")
+                                                      arg-value (macros/case
+                                                                  :clj `(clojure.lang.MapEntry. ~k ~v)
+                                                                  :cljs [k v]
+                                                                  :cljd `(MapEntry ~k ~v))]
+                                                  `([~acc ~k ~v] (let [~arg ~arg-value] ~@body))))))
                     (not (arities 2)) (conj (let [[[acc karg varg] & body] (arities 3)]
                                               `([~acc [~karg ~varg]] ~@body))))]
     `(reify
