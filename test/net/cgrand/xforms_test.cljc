@@ -158,3 +158,9 @@
          '(a b) false
          '{foo bar} false
          '{foo :bar} false)))
+
+(defmacro wraps-for-with-no-destructuring []
+  (x/into [] (x/for [x (range 5)] x)))
+
+(deftest for-in-macro
+  (is (= [0 1 2 3 4] (wraps-for-with-no-destructuring))))
