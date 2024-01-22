@@ -228,6 +228,14 @@ Evaluation count : 24 in 6 samples of 4 calls.
 
 ## Changelog
 
+### 0.19.6
+
+ * Fix regression in 0.19.5 #54
+
+### 0.19.5
+
+ * Support ClojureDart
+
 ### 0.19.4
 
  * Fix ClojureScript compilation broken in `0.19.3` #49

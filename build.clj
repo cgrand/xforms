@@ -3,7 +3,7 @@
             [clojure.java.shell :as sh]))
 
 (def lib 'net.cgrand/xforms)
-(def version "0.19.5"  #_(format "0.0.%s" (b/git-count-revs nil)))
+(def version "0.19.6"  #_(format "0.0.%s" (b/git-count-revs nil)))
 (def class-dir "target/classes")
 (def basis (b/create-basis {:project "deps.edn"}))
 (def jar-file (format "target/%s-%s.jar" (name lib) version))
